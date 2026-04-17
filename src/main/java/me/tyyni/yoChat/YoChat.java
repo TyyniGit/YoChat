@@ -27,6 +27,8 @@ public final class YoChat extends JavaPlugin {
     public void onEnable() {
         initializeManagers();
 
+        registerEvents();
+
         sendHelloMessage();
     }
 
