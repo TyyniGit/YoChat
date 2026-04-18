@@ -30,11 +30,11 @@ public class ChatChannel {
         return permission == null || player.hasPermission(permission);
     }
 
-    private void addMember(Player player) {
+    public void addMember(Player player) {
         members.add(player);
     }
 
-    private void removeMember(Player player) {
+    public void removeMember(Player player) {
         members.remove(player);
     }
 }

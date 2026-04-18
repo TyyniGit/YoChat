@@ -1,11 +1,10 @@
 package me.tyyni.yoChat.yochatAPI.interfaces;
 
 import me.tyyni.yoChat.yoChatPlugin.*;
-import me.tyyni.yoChat.yochatAPI.YoChatAPI;
 
 public interface YoChatProvider {
 
-    YoChat getYoChatAPI();
+    YoChat getYoChat();
     PrefixManager getPrefixManager();
 
     ChatManager getChatManager();

@@ -1,0 +1,12 @@
+me\tyyni\yoChat\yoChatPlugin\listeners\ChatListener.class
+me\tyyni\yoChat\yochatAPI\YoChatAPI.class
+me\tyyni\yoChat\yochatAPI\interfaces\YoChatProvider.class
+me\tyyni\yoChat\yoChatPlugin\commands\YoChatCommand.class
+me\tyyni\yoChat\yoChatPlugin\objects\ChatChannel.class
+me\tyyni\yoChat\yoChatPlugin\SuffixManager.class
+me\tyyni\yoChat\yoChatPlugin\ConfigManager.class
+me\tyyni\yoChat\yoChatPlugin\ChannelManager.class
+me\tyyni\yoChat\yoChatPlugin\PrefixManager.class
+me\tyyni\yoChat\yoChatPlugin\YoChat.class
+me\tyyni\yoChat\yoChatPlugin\ChatManager.class
+me\tyyni\yoChat\yoChatPlugin\listeners\PlayerJoinListener.class
