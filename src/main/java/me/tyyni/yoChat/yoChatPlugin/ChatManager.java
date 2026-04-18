@@ -3,9 +3,6 @@ package me.tyyni.yoChat.yoChatPlugin;
 import me.clip.placeholderapi.PlaceholderAPI;
 import me.tyyni.yoChat.yoChatPlugin.objects.ChatChannel;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
-import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
@@ -15,131 +12,125 @@ import org.bukkit.entity.Player;
 
 public class ChatManager {
 
+    private final YoChat plugin;
+    public ChatManager(YoChat plugin) {
+        this.plugin = plugin;
+    }
+
+    /**
+    * Message formatting for non channel messages
+     * @param sender Player who send the message
+     * @param message The sent message to format
+     * @return Component
+    **/
     public Component formatMessage(Player sender, Component message) {
         ConfigManager config = ConfigManager.getInstance();
 
-        // 1. Haetaan formaatti ja varmistetaan tagit ( {tag} -> <tag> )
-        String formatStr = config.getChannelFormat()
-                .replace("{prefix}", "<prefix>")
-                .replace("{player}", "<player>")
-                .replace("{suffix}", "<suffix>")
-                .replace("{message}", "<message>");
-
-        // 2. PARSITAAN prefix ja suffix heti komponenteiksi
-        // Tämä varmistaa, että &f tai &e toimii niiden sisällä
-        String rawPrefix = "";
-        String rawSuffix = "";
+        // 1. Haetaan raakatekstit (String-muodossa)
+        String prefix = "";
+        String suffix = "";
         if (config.isUseLuckPerms()) {
-            LuckPerms lp = LuckPermsProvider.get();
-            User user = lp.getUserManager().getUser(sender.getUniqueId());
-            if (user != null) {
-                rawPrefix = user.getCachedData().getMetaData().getPrefix() != null ? user.getCachedData().getMetaData().getPrefix() : "";
-                rawSuffix = user.getCachedData().getMetaData().getSuffix() != null ? user.getCachedData().getMetaData().getSuffix() : "";
-            }
+            prefix = getLuckPermsPrefix(sender);
+            suffix = getLuckPermsSuffix(sender);
         }
 
-        // 3. PAPI-käsittely RAUTATEKSTILLE (ennen komponentiksi muuttoa)
-        if (config.isUsePlaceholderAPI()) {
-            rawPrefix = PlaceholderAPI.setPlaceholders(sender, rawPrefix);
-            rawSuffix = PlaceholderAPI.setPlaceholders(sender, rawSuffix);
-            formatStr = PlaceholderAPI.setPlaceholders(sender, formatStr);
-        }
 
-        // 4. MUUTETAAN KOMPONENTEIKSI
-        // Käytetään sun config.parse() -metodia, jotta & ja < > toimivat molemmat
-        Component prefixComp = config.parse(rawPrefix);
-        Component suffixComp = config.parse(rawSuffix);
-        Component playerComp = Component.text(sender.getName()); // Pelaajan nimi
-
-        // Viesti tekstinä (PAPI-tuki viestin sisällä)
         String rawMsgText = PlainTextComponentSerializer.plainText().serialize(message);
-        if (config.isUsePlaceholderAPI()) {
-            rawMsgText = PlaceholderAPI.setPlaceholders(sender, rawMsgText);
+
+        String format = config.getChannelFormat();
+
+        String fullLine = format
+                .replace("{prefix}", prefix)
+                .replace("{player}", sender.getName())
+                .replace("{suffix}", suffix)
+                .replace("{message}", rawMsgText);
+
+        if (config.isUsePlaceholderAPI() && Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            fullLine = PlaceholderAPI.setPlaceholders(sender, fullLine);
         }
-        Component messageComp = Component.text(rawMsgText);
 
-        MiniMessage flexibleMM = MiniMessage.builder()
-                .tags(TagResolver.standard())
-                .strict(false) // Tämä estää virheen, jos tekstissä on outoja merkkejä
-                .build();
+        if (config.isDebug()) {
+            plugin.getLogger().info("DEBUG: Full line before parse: " + fullLine);
+        }
 
-        return flexibleMM.deserialize(formatStr,
-                Placeholder.component("prefix", prefixComp),
-                Placeholder.component("player", playerComp),
-                Placeholder.component("suffix", suffixComp),
-                Placeholder.component("message", messageComp)
-        );
+        return config.parse(fullLine);
     }
 
+    /**
+     * Help method for sending messages to all players on the server
+     * @param message The message to send
+     */
     public void broadcast(Component message) {
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.sendMessage(message);
         }
     }
 
+    /**
+     * Message formatting for channel messages
+     * @param channel The channel the message was sent to
+     * @param sender Player who send the message
+     * @param message The sent message to format
+     * @return Component
+     */
     public Component formatChannelMessage(ChatChannel channel, Player sender, Component message) {
         ConfigManager config = ConfigManager.getInstance();
 
-        // 1. Haetaan formaatti ja varmistetaan tagit ( {tag} -> <tag> )
-        String formatStr = config.getChannelFormat()
-                .replace("{prefix}", "<prefix>")
-                .replace("{player}", "<player>")
-                .replace("{suffix}", "<suffix>")
-                .replace("{channel}", "<channel>")
-                .replace("{message}", "<message>");
-
-        // 2. PARSITAAN prefix ja suffix heti komponenteiksi
-        // Tämä varmistaa, että &f tai &e toimii niiden sisällä
-        String rawPrefix = "";
-        String rawSuffix = "";
+        String prefix = "";
+        String suffix = "";
         if (config.isUseLuckPerms()) {
-            LuckPerms lp = LuckPermsProvider.get();
-            User user = lp.getUserManager().getUser(sender.getUniqueId());
-            if (user != null) {
-                rawPrefix = user.getCachedData().getMetaData().getPrefix() != null ? user.getCachedData().getMetaData().getPrefix() : "";
-                rawSuffix = user.getCachedData().getMetaData().getSuffix() != null ? user.getCachedData().getMetaData().getSuffix() : "";
-            }
+          prefix = getLuckPermsPrefix(sender);
+          suffix = getLuckPermsSuffix(sender);
         }
 
-        // 3. PAPI-käsittely RAUTATEKSTILLE (ennen komponentiksi muuttoa)
-        if (config.isUsePlaceholderAPI()) {
-            rawPrefix = PlaceholderAPI.setPlaceholders(sender, rawPrefix);
-            rawSuffix = PlaceholderAPI.setPlaceholders(sender, rawSuffix);
-            formatStr = PlaceholderAPI.setPlaceholders(sender, formatStr);
-        }
-
-        // 4. MUUTETAAN KOMPONENTEIKSI
-        // Käytetään sun config.parse() -metodia, jotta & ja < > toimivat molemmat
-        Component prefixComp = config.parse(rawPrefix);
-        Component suffixComp = config.parse(rawSuffix);
-        Component playerComp = Component.text(sender.getName()); // Pelaajan nimi
-
-        // Viesti tekstinä (PAPI-tuki viestin sisällä)
         String rawMsgText = PlainTextComponentSerializer.plainText().serialize(message);
-        if (config.isUsePlaceholderAPI()) {
-            rawMsgText = PlaceholderAPI.setPlaceholders(sender, rawMsgText);
+
+        String format = config.getChannelFormat();
+
+        String fullLine = format
+                .replace("{prefix}", prefix)
+                .replace("{player}", sender.getName())
+                .replace("{suffix}", suffix)
+                .replace("{channel}", channel.getName())
+                .replace("{message}", rawMsgText);
+
+
+        if (config.isUsePlaceholderAPI() && Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            fullLine = PlaceholderAPI.setPlaceholders(sender, fullLine);
         }
-        Component messageComp = Component.text(rawMsgText);
 
-        MiniMessage flexibleMM = MiniMessage.builder()
-                .tags(TagResolver.standard())
-                .strict(false) // Tämä estää virheen, jos tekstissä on outoja merkkejä
-                .build();
+        if (config.isDebug()) {
+            plugin.getLogger().info("DEBUG: Full line before parse: " + fullLine);
+        }
 
-        return flexibleMM.deserialize(formatStr,
-                Placeholder.component("prefix", prefixComp),
-                Placeholder.component("player", playerComp),
-                Placeholder.component("suffix", suffixComp),
-                Placeholder.component("message", messageComp),
-                Placeholder.component("channel", Component.text(channel.getName()))
-
-        );
+        return config.parse(fullLine);
     }
+
+    /**
+     * Method for finding the LuckPerms prefix of a specific player
+     * @param player The player whose prefix the method tries to find
+     * @return String
+     */
     private String getLuckPermsPrefix(Player player) {
         LuckPerms lp = LuckPermsProvider.get();
         User user = lp.getUserManager().getUser(player.getUniqueId());
         if (user != null) {
             return user.getCachedData().getMetaData().getPrefix() != null ? user.getCachedData().getMetaData().getPrefix() : "";
+        }
+
+        return "";
+    }
+
+    /**
+     * Method for finding the LuckPerms suffix of a specific player
+     * @param player The player whose suffix the method tries to find
+     * @return String
+     */
+    private String getLuckPermsSuffix(Player player) {
+        LuckPerms lp = LuckPermsProvider.get();
+        User user = lp.getUserManager().getUser(player.getUniqueId());
+        if (user != null) {
+            return user.getCachedData().getMetaData().getSuffix() != null ? user.getCachedData().getMetaData().getSuffix() : "";
         }
 
         return "";

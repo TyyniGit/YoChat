@@ -82,7 +82,7 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
 
     private void initializeManagers() {
         prefixManager = new PrefixManager();
-        chatManager = new ChatManager();
+        chatManager = new ChatManager(this);
         channelManager = new ChannelManager(this);
         configManager = new ConfigManager(this);
         suffixManager = new SuffixManager();
