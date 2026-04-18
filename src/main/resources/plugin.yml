@@ -1,11 +1,25 @@
 name: YoChat
-description: $description
+description: "The new best free chat plugin for Minecraft servers"
 prefix: YoChat
-version: '${version}'
+version: '1.0'
 
-main: me.tyyni.yoChat.YoChat
+main: me.tyyni.yoChat.yoChatPlugin.YoChat
 api-version: '1.21.11'
 load: STARTUP
 
+softdepend: [ PlaceholderAPI, LuckPerms ]
 authors: [ Tyyni ]
 
+commands:
+  yochat:
+    description: Main command for YoChat plugin. Use /yochat help for more information.
+    usage: /yochat <subcommand>
+    permission: yochat
+permissions:
+    yochat:
+        description: Permission for using the main YoChat command and its subcommands.
+        children:
+            yochat.reload:
+                description: Permission for reloading the YoChat plugin configuration.
+            yochat.channel:
+                description: Permission for managing chat channels in YoChat.

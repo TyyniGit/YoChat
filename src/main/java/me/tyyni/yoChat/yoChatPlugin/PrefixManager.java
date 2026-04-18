@@ -1,4 +1,4 @@
-package me.tyyni.yoChat;
+package me.tyyni.yoChat.yoChatPlugin;
 
 import lombok.Getter;
 import org.bukkit.entity.Player;

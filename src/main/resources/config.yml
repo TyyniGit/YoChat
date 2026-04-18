@@ -1,1 +1,34 @@
 # YoChat config
+# This is the main configuration file for YoChat.
+# You can customize various settings here to tailor the chat experience on your Minecraft server.
+
+# General Settings
+general:
+  # Enable or disable the chat plugin
+  enabled: true
+
+  # The prefix that will be displayed before chat messages from this plugin. You can use color codes and formatting here.
+  # Preferred to use the default prefix with a gradient for better aesthetics, but you can customize it as needed.
+  # (Default: <b><gradient:#9863E7:#9863E7>YoChat</gradient></b> )
+  chat-prefix: '<b><gradient:#9863E7:#9863E7>YoChat:</gradient></b> '
+
+  # Debug mode for logging additional information to the console
+  debug: false
+
+  use-channel-system: true
+  default-channel: global
+
+# Formatting Settings
+formatting:
+  # The format for chat messages.
+  # Placeholders:
+  # - {player} for the player's name
+  # - {message} for the chat message.
+  # - {prefix} for the player's prefix (if using a permissions plugin like LuckPerms)
+  # - {suffix} for the player's suffix (if using a permissions plugin like LuckPerms)
+  chat-format: '{player}: {message}'
+  channel-format: '[{channel}] {player}: {message}'
+
+Addidional:
+  useLuckPerms: true
+  usePlaceholderAPI: true
