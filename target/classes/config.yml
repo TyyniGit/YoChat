@@ -4,19 +4,33 @@
 
 # General Settings
 general:
-  # Enable or disable the chat plugin
+  # Enable or disable the whole plugin
   enabled: true
 
   # The prefix that will be displayed before chat messages from this plugin. You can use color codes and formatting here.
-  # Preferred to use the default prefix with a gradient for better aesthetics, but you can customize it as needed.
+  # Preferred to use the default prefix for better aesthetics, but you can customize it as needed.
   # (Default: <b><gradient:#9863E7:#9863E7>YoChat</gradient></b> )
-  chat-prefix: "<b><gradient:#9863E7:#9863E7>YoChat:</gradient></b> "
+  chat-prefix: "<b><gradient:#9863E7:#9863E7>YoChat »</gradient></b> "
 
   # Debug mode for logging additional information to the console
   debug: false
 
+  # Whether the channel system should be used
   use-channel-system: true
+
+  # The channel where players will connect automatically when joining the server
   default-channel: global
+
+  # The place this plugin will try to find the prefix
+  # Allowed sources:
+  # - "this" for the prefix defined in this plugin
+  # - "LuckPerms" for the prefix defined in LuckPerms
+  # "prefix-source" will be the first place the plugin tries to find but if it fails it will try "prefix-source2"
+  prefix-source: LuckPerms
+  prefix-source2: this
+
+  # Whether the prefix and suffix system should be used
+  use-prefix-suffix-system:
 
 # Formatting Settings
 formatting:
@@ -24,18 +38,84 @@ formatting:
   # Placeholders:
   # - {player} for the player's name
   # - {message} for the chat message.
-  # - {prefix} for the player's prefix (if using a permissions plugin like LuckPerms)
-  # - {suffix} for the player's suffix (if using a permissions plugin like LuckPerms)
+  # - {prefix} for the player's prefix
+  # - {suffix} for the player's suffix
   chat-format: "{player}: {message}"
   # The format for channel messages.
   # Placeholders:
   # - {player} for the player's name
   # - {message} for the chat message.
-  # - {prefix} for the player's prefix (if using a permissions plugin like LuckPerms)
-  # - {suffix} for the player's suffix (if using a permissions plugin like LuckPerms)
+  # - {prefix} for the player's prefix
+  # - {suffix} for the player's suffix
   # - {channel} for the channel name
   channel-format: "{player}: {message}"
 
-Addidional:
+  # Channel specific formatting overrides the chat format set in the "formatting" category and world specific formatting
+  channel-specific-formatting:
+    # Whether the channel specific formatting should be used
+    enabled: false
+
+    # Remove this after you learn how to use channel specific formatting
+    examplechannel:
+      format: "{player}» {message}"
+
+  # World specific formatting overrides the chat format set in the "formatting" category
+  # When you add a world, the format only shows up in that specific world
+  world-specific-formatting:
+    # Wether the world specific formatting should be used
+    enabled: false
+
+    # Remove this after you learn how to use world specific formatting
+    exampleworld:
+      format: "{player}» {message}"
+
+# Other settings
+addidional:
   useLuckPerms: true
   usePlaceholderAPI: true
+
+# Moderation settings
+moderation:
+  # Whether the chat automoderation should be used
+  # If you have other chat moderation plugins switch enabled to false!
+  enabled: true
+
+  # The message what will be sent to the player who said a blocked word
+  # Placeholders:
+  # - {player} for the player's name
+  # - {prefix} for the player's prefix
+  # - {suffix} for the player's suffix
+  # - {blockedword} for the blocked word
+  blocked-word-message: "<red>Please speak respectfully on this server!</red>"
+
+  # In these brackets "[]" you can list blocked words by using a comma between
+  # Example: [badword, badword2, badword3]
+  blocked-words: []
+
+  # Whether there should be a message sent about the player being muted when trying to chat
+  use-mute-message: true
+  # Message that will be shown when a player tries to chat and is muted
+  # Placeholders:
+  # - {player} for the player's name
+  # - {prefix} for the player's prefix
+  # - {suffix} for the player's suffix
+  # - {reason} for the mute reason
+  # - {duration} for the mute overall duration
+  # - {punisher} for the mute's giver
+  # - {whenstarted} for when the mute started
+  # - {timeleft} for the time left in the mute
+  mute-message: "<red>You are muted for the reason <b>'{reason}'</b></red>"
+
+  discord-webhook:
+    # Whether muting and unmuting should send a message to Discord throught a webhook
+    enabled: true
+
+    # Discord channel url where this plugin should log mutes
+    webhook-mute-channel-url: ""
+    # Discord channel url where this plugin should log unmutes
+    webhook-unmute-channel-url: ""
+
+    # Whether the Discord webhook should log the responce code in console
+    webhook-send-response-code: true
+    # Whether the Discord webhook should log the responce body in console
+    webhook-send-response-body: true

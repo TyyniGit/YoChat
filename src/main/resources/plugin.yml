@@ -7,7 +7,7 @@ main: me.tyyni.yoChat.yoChatPlugin.YoChat
 api-version: '1.21.11'
 load: STARTUP
 
-softdepend: [ PlaceholderAPI, LuckPerms ]
+softdepend: [ PlaceholderAPI, LuckPerms, Vault ]
 authors: [ Tyyni ]
 
 commands:
@@ -19,12 +19,31 @@ permissions:
     yochat:
         description: Permission for using the main YoChat command and its subcommands.
         children:
-          yochat.reload:
-                description: Permission for reloading the YoChat plugin configuration.
-          yochat.channel:
-                description: Permission for managing chat channels in YoChat.
           yochat.commands:
-                description: Permission for the commands in YoChat.
+            description: Permission for the commands in YoChat.
+            children:
+              yochat.commands.reload:
+                description: Permission for reloading the YoChat plugin configuration.
+
+              yochat.commands.channels:
+                description: Permission for managing chat channels in YoChat.
+                children:
+                 yochat.commands.channels.delete:
+                   description: Permission for deleting chat channels.
+                 yochat.commands.channels.create:
+                   description: Permission for creating chat channels.
+                 yochat.commands.channels.list:
+                   description: Permission for seeing a list of chat channels.
+                 yochat.commands.channels.join:
+                   description: Permission for joining chat channels
+
+              yochat.commands.help:
+                description: Permission for the help command.
+
+              yochat.commands.mute:
+                description: Permission for the mute command.
+              yochat.commands.unmute:
+                description: Permission for the unmute command.
+
           yochat.tabcomplete:
                 description: Permission for tab completing in the commands of YoChat.
-

@@ -1,17 +1,21 @@
 package me.tyyni.yoChat.yoChatPlugin;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import me.tyyni.yoChat.yoChatPlugin.objects.ChatChannel;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
+import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 public class ConfigManager {
 
     @Getter
@@ -28,14 +32,38 @@ public class ConfigManager {
     private boolean useLuckPerms;
     @Getter
     private boolean usePlaceholderAPI;
+
     @Getter
     private String chatFormat;
     @Getter
     private String channelFormat;
     @Getter
+
     private boolean useChannelSystem;
     @Getter
-    ChatChannel defaultChannel;
+    private ChatChannel defaultChannel;
+
+    @Getter
+    private List<String> blockedwords;
+    @Getter
+    private boolean isModerationEnabled;
+    @Getter
+    private String blockedWordMessage;
+    @Getter
+    private String muteChannelUrl;
+    @Getter
+    private String unmuteChannelUrl;
+    @Getter
+    private boolean sendResponseCode;
+    @Getter
+    private boolean sendResponseBody;
+    @Getter
+    private boolean webhookEnabled;
+
+    @Getter
+    private boolean useMuteMessage;
+    @Getter
+    private String muteMessage;
 
     public ConfigManager(YoChat plugin) {
         this.plugin = plugin;
@@ -50,7 +78,6 @@ public class ConfigManager {
     }
 
     public void load() {
-        // 1. TÄRKEÄÄ: Lataa tiedosto uudelleen levyltä muistiin!
         try {
             config.load(file);
         } catch (Exception e) {
@@ -62,10 +89,9 @@ public class ConfigManager {
 
         prefixManager.getPrefixes().clear();
 
-        // 2. Haetaan arvot oikeista osioista (formatting.chat-format jne.)
         debug = config.getBoolean("general.debug", false);
         isEnabled = config.getBoolean("general.enabled", true);
-        useLuckPerms = config.getBoolean("Addidional.useLuckPerms", true); // Huom: kirjoitusvirhe 'Addidional' konffissa
+        useLuckPerms = config.getBoolean("Addidional.useLuckPerms", true);
         usePlaceholderAPI = config.getBoolean("Addidional.usePlaceholderAPI", true);
 
         chatFormat = config.getString("formatting.chat-format", "{player}: {message}");
@@ -74,12 +100,23 @@ public class ConfigManager {
         useChannelSystem = config.getBoolean("general.use-channel-system", true);
         defaultChannel = channelManager.getChannel(config.getString("general.default-channel", "global"));
 
+        isModerationEnabled = config.getBoolean("moderation.enabled", true);
+        blockedwords = config.getStringList("moderation.blocked-words");
+        blockedWordMessage = config.getString("moderation.bad-word-message", "<red>Please speak respectfully on this server!</red>");
+        sendResponseCode = config.getBoolean("moderation.webhook-send-response-code", true);
+        sendResponseBody = config.getBoolean("moderation.webhook-send-response-body", true);
+        unmuteChannelUrl = config.getString("moderation.webhook-unmute-channel-url");
+        muteChannelUrl = config.getString("moderation.webhook-mute-channel-url");
+        webhookEnabled = config.getBoolean("moderation.discord-webhook.enabled", true);
+
+        useMuteMessage = config.getBoolean("moderation.use-mute-message", true);
+        muteMessage = config.getString("moderation.mute-message", "<red>You are muted for the reason <b>'{reason}'</b></red>");
+
         if (defaultChannel == null) {
             plugin.getLogger().warning("Default channel not found! Using global.");
             defaultChannel = channelManager.getChannel("global");
         }
 
-        // Prefiksin haku 'general' osiosta
         String prefix = config.getString("general.chat-prefix");
         if (prefix == null) {
             prefix = plugin.getAlternativePrefix();
@@ -88,7 +125,6 @@ public class ConfigManager {
         Component prefixComponent = parse(prefix);
         plugin.setYoChatPrefix(prefixComponent);
 
-        // Prefiksien haku (jos ne ovat konffissa)
         ConfigurationSection prefixes = config.getConfigurationSection("prefixes");
         if (prefixes != null) {
             for (String key : prefixes.getKeys(false)) {
@@ -104,6 +140,11 @@ public class ConfigManager {
 
         if (debug) {
             plugin.getLogger().info("[DEBUG] Config reloaded and variables updated!");
+        }
+
+        if(!isEnabled) {
+            plugin.getLogger().warning("Disabled plugin!");
+            Bukkit.getPluginManager().disablePlugin(plugin);
         }
     }
 
@@ -131,19 +172,10 @@ public class ConfigManager {
     public Component parse(String input) {
         if (input == null || input.isEmpty()) return Component.empty();
 
-        // 1. Jos tekstissä on MiniMessage-tageja (kuten <red> tai <gradient>)
-        // Käytetään MiniMessagea, mutta sallitaan myös Legacy-koodit sen sisällä
-        // (Huom: MiniMessage ei oletuksena tykkää &-merkeistä, joten korjataan ne)
-
-        // 2. Käsitellään Legacy-koodit (& -> §)
         String legacyProcessed = input.replace('&', '§');
 
-        // 3. Muutetaan kaikki ensin komponentiksi Legacy-serialisoijan kautta (tukee Hexiä)
         Component legacyComponent = LegacyComponentSerializer.legacySection().deserialize(legacyProcessed.replace('&', '§'));
 
-        // 4. Jos haluat tukea MiniMessagea SAMASSA merkkijonossa:
-        // Muutetaan legacy takaisin MiniMessage-yhteensopivaksi tai käytetään yhdistelmää.
-        // Helpoin tapa tukea molempia on katsoa, onko tekstissä MiniMessage-tageja.
         if (input.contains("<") && input.contains(">")) {
             return MiniMessage.miniMessage().deserialize(input);
         }

@@ -49,9 +49,10 @@ public class ChannelManager {
 
         for (Player p : Bukkit.getOnlinePlayers()) {
 
+            if(!channel.getMembers().contains(p)) continue;
+
             if (!channel.canJoin(p)) continue;
 
-            // radius check
             if (channel.getRadius() > 0) {
                 if (!p.getWorld().equals(sender.getWorld())) continue;
 
@@ -59,6 +60,7 @@ public class ChannelManager {
             }
 
             p.sendMessage(msg);
+            Bukkit.getConsoleSender().sendMessage(msg);
         }
     }
 
@@ -75,7 +77,7 @@ public class ChannelManager {
                 return channel;
             }
         }
-        return null; // Palauta null vasta, kun KAIKKI kanavat on katsottu
+        return null;
     }
 
     public void saveChannels() {
@@ -105,18 +107,25 @@ public class ChannelManager {
     public void loadChannels() {
         channels.clear();
 
-        // Luodaan global aina uudestaan, jotta se on olemassa vaikka tiedosto olisi tyhjä
         register(createChannel("global", null, -1));
 
         ConfigurationSection section = config.getConfigurationSection("channels");
         if (section == null) return;
 
         for (String key : section.getKeys(false)) {
-            // Huom: varmista että haet radiuksen oikeasta polusta
             int radius = section.getInt(key + ".radius", -1);
             String permission = section.getString(key + ".permission");
             ChatChannel channel = createChannel(key, permission, radius);
             register(channel);
         }
+    }
+
+    public void joinChannel(Player player, ChatChannel channel) {
+        ChatChannel channelByPlayer = getChannelByPlayer(player);
+        if(channelByPlayer != null) {
+            channelByPlayer.removeMember(player);
+        }
+
+        channel.addMember(player);
     }
 }

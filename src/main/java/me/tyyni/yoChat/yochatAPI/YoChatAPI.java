@@ -2,11 +2,15 @@ package me.tyyni.yoChat.yochatAPI;
 
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import me.tyyni.yoChat.yoChatPlugin.MuteManager;
 import me.tyyni.yoChat.yoChatPlugin.YoChat;
 import me.tyyni.yoChat.yoChatPlugin.objects.ChatChannel;
+import me.tyyni.yoChat.yoChatPlugin.objects.MutedPlayer;
 import me.tyyni.yoChat.yochatAPI.interfaces.YoChatProvider;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
+
+import java.util.UUID;
 
 @NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public class YoChatAPI {
@@ -53,5 +57,20 @@ public class YoChatAPI {
         if (provider == null) {
             throw new IllegalStateException("YoChatProvider is not set! Please set it before using the API.");
         }
+    }
+
+    public static void removeMutedPlayer(MutedPlayer mutedPlayer) {
+        checkProvider();
+        MuteManager.removeMutedPlayer(mutedPlayer);
+    }
+
+    public static void addMutedPlayer(MutedPlayer mutedPlayer) {
+        checkProvider();
+        MuteManager.addMutedPlayer(mutedPlayer);
+    }
+
+    public static MutedPlayer getMutedPlayer(UUID uuid) {
+        checkProvider();
+        return MuteManager.getMutedPlayer(uuid.toString());
     }
 }

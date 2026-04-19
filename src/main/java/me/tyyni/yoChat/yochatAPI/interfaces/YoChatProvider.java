@@ -12,4 +12,6 @@ public interface YoChatProvider {
     ChannelManager getChannelManager();
 
     SuffixManager getSuffixManager();
+
+    MuteManager getMuteManager();
 }

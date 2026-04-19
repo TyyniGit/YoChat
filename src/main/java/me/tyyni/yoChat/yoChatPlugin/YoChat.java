@@ -28,15 +28,18 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
     @Setter
     private Component YoChatPrefix;
     @Getter
-    private final String alternativePrefix = "&#9863E7&lY&#9863E7&lo&#9863E7&lC&#9863E7&lh&#9863E7&la&#9863E7&lt&#9863E7&l: ";
+    private final String alternativePrefix = "&#9863E7&lY&#9863E7&lo&#9863E7&lC&#9863E7&lh&#9863E7&la&#9863E7&lt #9863E7» ";
     @Getter
-    public final TextColor mainColor = TextColor.fromHexString("#9863E7");
+    private final TextColor mainColor = TextColor.fromHexString("#EBE7E4");
+    @Getter
+    private final TextColor highlightColor = TextColor.fromHexString("#9863E7");
 
     private PrefixManager prefixManager;
     private ChatManager chatManager;
     private ChannelManager channelManager;
     private ConfigManager configManager;
     private SuffixManager suffixManager;
+    private MuteManager muteManager;
 
     @Override
     public void onLoad() {
@@ -59,6 +62,7 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
 
         YoChatAPI.setProvider(this);
 
+        muteManager.load();
         channelManager.loadChannels();
         configManager.load();
 
@@ -78,6 +82,7 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
         }
 
         channelManager.saveChannels();
+        muteManager.save();
     }
 
     private void initializeManagers() {
@@ -86,6 +91,7 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
         channelManager = new ChannelManager(this);
         configManager = new ConfigManager(this);
         suffixManager = new SuffixManager();
+        muteManager = new MuteManager(this);
     }
 
     private void registerEvents() {
@@ -123,7 +129,9 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
     }
 
     @Override
-    public SuffixManager getSuffixManager() {
-        return suffixManager;
-    }
+    public SuffixManager getSuffixManager() {return suffixManager;}
+
+    @Override
+    public MuteManager getMuteManager() {return muteManager;}
+
 }
