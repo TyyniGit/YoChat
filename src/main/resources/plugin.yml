@@ -14,7 +14,6 @@ commands:
   yochat:
     description: Main command for YoChat plugin. Use /yochat help for more information.
     usage: /yochat <subcommand>
-    permission: yochat.commands
 
 permissions:
     yochat:

@@ -210,6 +210,13 @@ public class ConfigManager {
             }
         }
 
+        if(usePlaceholderAPI) {
+            if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") == null) {
+                plugin.getLogger().warning("PlaceholderAPI plugin not found!");
+                usePlaceholderAPI = false;
+            }
+        }
+
         if(!isEnabled) {
             plugin.getLogger().warning("Disabled plugin!");
             Bukkit.getPluginManager().disablePlugin(plugin);

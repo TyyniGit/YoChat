@@ -10,6 +10,7 @@ import me.tyyni.yoChat.yoChatPlugin.objects.ChatChannel;
 import me.tyyni.yoChat.yoChatAPI.YoChatAPI;
 import me.tyyni.yoChat.yoChatAPI.interfaces.YoChatProvider;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.command.ConsoleCommandSender;
@@ -110,7 +111,12 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
 
     private void sendHelloMessage() {
         ConsoleCommandSender console = Bukkit.getConsoleSender();
-        console.sendMessage(YoChatPrefix.append(Component.text("Thanks for using my plugin! -Tyyni")));
+        console.sendMessage(YoChatPrefix.append(Component.text("Thanks for using my plugin! -Tyyni", getMainColor())));
+        console.sendMessage(YoChatPrefix.append(
+                Component.text("The plugin is still under development! ", NamedTextColor.YELLOW)
+                        .append(Component.text("Report bugs on Discord: ", NamedTextColor.YELLOW))
+                        .append(Component.text("@tyynilol", highlightColor))
+        ));
     }
 
     @Override

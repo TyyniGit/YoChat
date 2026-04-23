@@ -6,7 +6,7 @@
 
     <groupId>me.tyyni</groupId>
     <artifactId>YoChat</artifactId>
-    <version>1.0.52-BETA</version>
+    <version>1.0.0-BETA1</version>
     <packaging>jar</packaging>
 
     <name>YoChat</name>

@@ -7,6 +7,7 @@ import me.tyyni.yoChat.yoChatPlugin.objects.ChatChannel;
 import me.tyyni.yoChat.yoChatPlugin.objects.MutedPlayer;
 import me.tyyni.yoChat.yoChatAPI.YoChatAPI;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.model.user.User;
@@ -63,14 +64,6 @@ public class ChatManager {
         return true;
     }
 
-    /**
-     * The master method for all the other formatters
-     *
-     * @param format       The format the method should be using
-     * @param player       If the format needs a player to function, it is possible to add it here. It has the @Nullable annotation.
-     * @param placeholders The placeholders the method should be parsing
-     * @return format when its fully processed
-     */
     private String processFormat(String format, @Nullable Player player, Map<String, String> placeholders) {
         String finalLine = format;
 
@@ -99,13 +92,6 @@ public class ChatManager {
             }
         }
 
-        // Prefix and suffix systems might be implemented in the future.
-        /* if (prefix.isEmpty() && player != null) {
-         *    prefix = YoChatAPI.getPrefix(player);
-         *    suffix = YoChatAPI.getSuffix(player);
-         * }
-         */
-
         finalLine = finalLine.replace("{prefix}", prefix)
                 .replace("{suffix}", suffix)
                 .replace("{player}", name);
@@ -129,20 +115,29 @@ public class ChatManager {
 
     public Component formatMessage(Player sender, Component message) {
         String rawText = PlainTextComponentSerializer.plainText().serialize(message);
-        String formatted = processFormat(config.getChatFormat(), sender, Map.of("{message}", rawText));
-        return mpm.parse(sender, formatted);
+
+        Component parsedUserMessage = mpm.parse(sender, rawText);
+
+        String formatted = processFormat(config.getChatFormat(), sender, Map.of("{message}", "<msg>"));
+
+        return mpm.parseAdmin(formatted, Placeholder.component("msg", parsedUserMessage));
     }
 
     public Component formatChannelMessage(ChatChannel channel, Player sender, Component message) {
         String rawText = PlainTextComponentSerializer.plainText().serialize(message);
+
+        Component parsedUserMessage = mpm.parse(sender, rawText);
+
         String format = (channel.getFormat() != null && !channel.getFormat().isEmpty()) ? channel.getFormat() : config.getChannelFormat();
 
         Map<String, String> placeholders = Map.of(
                 "{channel}", channel.getName(),
-                "{message}", rawText
+                "{message}", "<msg>"
         );
 
-        return mpm.parse(sender, processFormat(format, sender, placeholders));
+        String processedFormat = processFormat(format, sender, placeholders);
+
+        return mpm.parseAdmin(processedFormat, Placeholder.component("msg", parsedUserMessage));
     }
 
     public Component formatMessage(String format, Player sender, String blockedword) {
@@ -164,7 +159,6 @@ public class ChatManager {
                 if (mentionersuffix.isEmpty()) mentionersuffix = vaultChat.getPlayerSuffix(mentioner);
             }
         }
-
 
         Map<String, String> placeholders = Map.of(
                 "{name}", receiver.getName(),
@@ -277,15 +271,9 @@ public class ChatManager {
         blockedPattern = Pattern.compile("\\b(" + regex + ")\\b", Pattern.CASE_INSENSITIVE);
     }
 
-    /**
-     * Parses the duration String to long
-     *
-     * @param duration Duration in the form of "10m" or "2h"
-     * @return Duration in millis
-     */
     public long parseDuration(String duration) {
         if (duration == null || duration.isEmpty()) return 0L;
-        
+
         String unit = duration.replaceAll("\\d+", "").toLowerCase();
         String amountStr = duration.replaceAll("[a-zA-Z]+", "");
 
@@ -317,6 +305,4 @@ public class ChatManager {
     public boolean containsName(Player player, String text) {
         return text.toLowerCase(Locale.ROOT).contains(player.getName().toLowerCase(Locale.ROOT));
     }
-
-
 }

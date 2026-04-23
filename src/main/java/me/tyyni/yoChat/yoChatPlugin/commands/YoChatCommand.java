@@ -32,7 +32,7 @@ public class YoChatCommand implements TabExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
-        if (!sender.hasPermission("yochat.commands")) {
+        if (sender instanceof Player && !sender.hasPermission("yochat.commands")) {
             sendNoPermissionMessage(sender);
             return true;
         }
@@ -72,30 +72,38 @@ public class YoChatCommand implements TabExecutor {
     }
 
     private void handleHelp(CommandSender sender) {
-        if (!sender.hasPermission("yochat.commands.help")) {
+        if (sender instanceof Player && !sender.hasPermission("yochat.commands.help")) {
             sendNoPermissionMessage(sender);
             return;
         }
+
         sender.sendMessage(plugin.getYoChatPrefix().append(Component.text("YoChat Commands:", plugin.getMainColor())));
+
         sender.sendMessage(Component.text("/yochat ", plugin.getMainColor())
                 .append(Component.text("- Displays plugin information", plugin.getHighlightColor())));
+
         sender.sendMessage(Component.text("/yochat help ", plugin.getMainColor())
                 .append(Component.text("- Displays this help message", plugin.getHighlightColor())));
+
         sender.sendMessage(Component.text("/yochat reload ", plugin.getMainColor())
                 .append(Component.text("- Reloads the config", plugin.getHighlightColor())));
+
         sender.sendMessage(Component.text("/yochat channels ", plugin.getMainColor())
                 .append(Component.text("- Channel management commands", plugin.getHighlightColor())));
+
         sender.sendMessage(Component.text("/yochat mute ", plugin.getMainColor())
                 .append(Component.text("- Mute command", plugin.getHighlightColor())));
+
         sender.sendMessage(Component.text("/yochat unmute ", plugin.getMainColor())
                 .append(Component.text("- Unmute command", plugin.getHighlightColor())));
     }
 
     private void handleReload(CommandSender sender) {
-        if (!sender.hasPermission("yochat.commands.reload")) {
+        if (sender instanceof Player && !sender.hasPermission("yochat.commands.reload")) {
             sendNoPermissionMessage(sender);
             return;
         }
+
         YoChat api = YoChatAPI.getInstance();
         ConfigManager configManager = ConfigManager.getInstance();
         try {
@@ -112,10 +120,11 @@ public class YoChatCommand implements TabExecutor {
     }
 
     private void handleChannels(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("yochat.commands.channels")) {
+        if (sender instanceof Player && !sender.hasPermission("yochat.commands.channels")) {
             sendNoPermissionMessage(sender);
             return;
         }
+
         if (!ConfigManager.getInstance().isUseChannelSystem()) {
             sender.sendMessage(plugin.getYoChatPrefix().append(
                     Component.text("The channel system is not enabled", NamedTextColor.RED)
@@ -279,7 +288,11 @@ public class YoChatCommand implements TabExecutor {
             sender.sendMessage(plugin.getYoChatPrefix().append(Component.text("The moderation system is not enabled!", NamedTextColor.RED)));
             return;
         }
-        if (!sender.hasPermission("yochat.commands.mute")) { sendNoPermissionMessage(sender); return; }
+
+        if (sender instanceof Player && !sender.hasPermission("yochat.commands.mute")) {
+            sendNoPermissionMessage(sender);
+            return;
+        }
 
         if (args.length == 1) {
             sender.sendMessage(plugin.getYoChatPrefix().append(Component.text("Mute commands:", plugin.getMainColor())));
@@ -383,7 +396,11 @@ public class YoChatCommand implements TabExecutor {
             sender.sendMessage(plugin.getYoChatPrefix().append(Component.text("The moderation system is not enabled!", NamedTextColor.RED)));
             return;
         }
-        if (!sender.hasPermission("yochat.commands.unmute")) { sendNoPermissionMessage(sender); return; }
+
+        if (sender instanceof Player && !sender.hasPermission("yochat.commands.unmute")) {
+            sendNoPermissionMessage(sender);
+            return;
+        }
 
         if (args.length == 1) {
             sender.sendMessage(plugin.getYoChatPrefix().append(Component.text("Mute commands:", plugin.getMainColor())));
@@ -510,7 +527,7 @@ public class YoChatCommand implements TabExecutor {
     }
 
     private void sendNoPermissionMessage(CommandSender sender) {
-        sender.sendMessage(Component.text("You don't have the permission to execute this command!", plugin.getMainColor()));
+        sender.sendMessage(Component.text("You don't have permission to execute this command!", NamedTextColor.RED));
     }
 
     private void sendUnmuteWebhook(String targetname, @Nullable String reason, String senderName) {
