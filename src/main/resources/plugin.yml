@@ -7,7 +7,7 @@ main: me.tyyni.yoChat.yoChatPlugin.YoChat
 api-version: '1.21.11'
 load: STARTUP
 
-softdepend: [ PlaceholderAPI, LuckPerms, Vault ]
+softdepend: [ PlaceholderAPI, Vault, LuckPerms ]
 authors: [ Tyyni ]
 
 commands:
@@ -15,8 +15,10 @@ commands:
     description: Main command for YoChat plugin. Use /yochat help for more information.
     usage: /yochat <subcommand>
     permission: yochat.commands
+
 permissions:
     yochat:
+        default: false
         description: Permission for using the main YoChat command and its subcommands.
         children:
           yochat.commands:

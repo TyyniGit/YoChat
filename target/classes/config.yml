@@ -21,17 +21,6 @@ general:
   # The channel where players will connect automatically when joining the server
   default-channel: global
 
-  # The place this plugin will try to find the prefix
-  # Allowed sources:
-  # - "this" for the prefix defined in this plugin
-  # - "LuckPerms" for the prefix defined in LuckPerms
-  # "prefix-source" will be the first place the plugin tries to find but if it fails it will try "prefix-source2"
-  prefix-source: LuckPerms
-  prefix-source2: this
-
-  # Whether the prefix and suffix system should be used
-  use-prefix-suffix-system:
-
 # Formatting Settings
 formatting:
   # The format for chat messages.
@@ -40,7 +29,7 @@ formatting:
   # - {message} for the chat message.
   # - {prefix} for the player's prefix
   # - {suffix} for the player's suffix
-  chat-format: "{player}: {message}"
+  chat-format: "{prefix}{player}{suffix} <yellow><b>»</b></yellow> {message}"
   # The format for channel messages.
   # Placeholders:
   # - {player} for the player's name
@@ -48,30 +37,25 @@ formatting:
   # - {prefix} for the player's prefix
   # - {suffix} for the player's suffix
   # - {channel} for the channel name
-  channel-format: "{player}: {message}"
+  channel-format: "[{channel}] {prefix}{player}{suffix} <yellow><b>»</b></yellow> {message}"
 
   # Channel specific formatting overrides the chat format set in the "formatting" category and world specific formatting
   channel-specific-formatting:
     # Whether the channel specific formatting should be used
     enabled: false
 
+    formats:
     # Remove this after you learn how to use channel specific formatting
-    examplechannel:
-      format: "{player}» {message}"
-
-  # World specific formatting overrides the chat format set in the "formatting" category
-  # When you add a world, the format only shows up in that specific world
-  world-specific-formatting:
-    # Wether the world specific formatting should be used
-    enabled: false
-
-    # Remove this after you learn how to use world specific formatting
-    exampleworld:
-      format: "{player}» {message}"
+      examplechannel:
+        format: "{player}» {message}"
+      example2:
+        format: "{player}: {message}"
 
 # Other settings
 addidional:
+  # Either LuckPerms or vault has to be used or the plugin won't work
   useLuckPerms: true
+  useVault: false
   usePlaceholderAPI: true
 
 # Moderation settings
@@ -89,11 +73,15 @@ moderation:
   blocked-word-message: "<red>Please speak respectfully on this server!</red>"
 
   # In these brackets "[]" you can list blocked words by using a comma between
-  # Example: [badword, badword2, badword3]
+  # Example: ["badword", "badword2", "badword3"]
+  # Also possible:
+  # - "badword"
+  # - "badword2"
   blocked-words: []
 
   # Whether there should be a message sent about the player being muted when trying to chat
-  use-mute-message: true
+  use-muted-message: true
+
   # Message that will be shown when a player tries to chat and is muted
   # Placeholders:
   # - {player} for the player's name
@@ -104,18 +92,113 @@ moderation:
   # - {punisher} for the mute's giver
   # - {whenstarted} for when the mute started
   # - {timeleft} for the time left in the mute
-  mute-message: "<red>You are muted for the reason <b>'{reason}'</b></red>"
+  muted-message: "<red>You are muted for the reason <b>'{reason}'</b></red>"
+
+  # Whether there should be a message sent about the player getting muted if they are online
+  use-yougotmuted-message: true
+
+  # Message that will be shown when a player tries to chat and is muted
+  # Placeholders:
+  # - {player} for the player's name
+  # - {prefix} for the player's prefix
+  # - {suffix} for the player's suffix
+  # - {reason} for the mute reason
+  # - {duration} for the mute overall duration
+  # - {punisher} for the mute's giver
+  yougotmuted-message: "<red>You are muted for the reason <b>'{reason}'</b> for the time of <b>'{duration}'</b></red>"
+
+  # Whether there should be a message sent about the player getting unmuted if they are online
+  use-yougotunmuted-message: true
+
+  # Message that will be shown when a player gets unmuted, and they are online
+  # Placeholders:
+  # - {player} for the player's name
+  # - {prefix} for the player's prefix
+  # - {suffix} for the player's suffix
+  # - {reason} for the unmute reason
+  # - {pardoner} for the unmuter's name
+  yougotunmuted-message: "<green>You got unmuted by <b>'{pardoner}'</b>!</green>"
+
+  # Whether there should be a message sent about the player's mute being over if they are online
+  use-timeended-message: true
+
+  # Message that will be shown when a player's mute ends, and they are online
+  # Placeholders:
+  # - {player} for the player's name
+  # - {prefix} for the player's prefix
+  # - {suffix} for the player's suffix
+  timeended-message: "<green>Your mute is over!</green>"
+
+  # How often should the plugin check if a player's mute has ended
+  # By reducing the time between checks, it will get more precise, but also uses more recources
+  mute-checker-interval: "10s"
 
   discord-webhook:
-    # Whether muting and unmuting should send a message to Discord throught a webhook
+    # Whether muting and unmuting should send a message to Discord through a webhook
     enabled: true
 
-    # Discord channel url where this plugin should log mutes
-    webhook-mute-channel-url: ""
-    # Discord channel url where this plugin should log unmutes
-    webhook-unmute-channel-url: ""
+    # Discord webhook where this plugin should log mutes
+    mute-webhook-url: ""
+    # Discord webhook where this plugin should log unmutes
+    unmute-webhook-url: ""
 
     # Whether the Discord webhook should log the responce code in console
     webhook-send-response-code: true
     # Whether the Discord webhook should log the responce body in console
     webhook-send-response-body: true
+
+# What MiniMessage tags should be allowed in chat and with what permission
+# Check https://docs.papermc.io/adventure/minimessage/format/ before use!
+minimessage-customization:
+  # Whether every tag has to have a start and an end tag.
+  strict-mode: false
+  # If the value is true, the tag is allowed for everyone (false for not in use)
+  # If the value is a string of characters, the tag has a required permission
+  allowed-tags:
+    color: true
+    decoration: true
+    reset: true
+    newline: true
+    gradient: false
+    transition: false
+    pride: false
+    hover: false
+    click: false
+    insertion: false
+    keybind: false
+    translatable: false
+    translatablefallback: false
+    selector: false
+    score: false
+    nbt: false
+    font: false
+    shadow: false
+    sprite: false
+    sequentialhead: false
+
+# If a player types someone's name in chat it will look like a ping in Discord for example
+mentioning:
+  # Whether the mention system should be used
+  enabled: true
+
+  # The way the mention will look
+  # Placeholders:
+  # - {name} for the mentioned player's name
+  # - {prefix} for the mentioned player's prefix
+  # - {suffix} for the mentioned player's suffix
+  # - {mentionername} for the mentioner's name
+  # - {mentionerprefix} for the mentioner's prefix
+  # - {mentionersuffix} for the mentioner's suffix
+  format: "<blue>@{name}</blue>"
+
+  # Whether there should be a sound played when someone types your name in the chat
+  # Sound is only heard by the mentioned player
+  use-sound: true
+
+  # Sounds should look the way they are in spigot's docs: https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Sound.html
+  # Example: Experience orb pickup -> ENTITY_EXPERIENCE_ORB_PICKUP
+  sound: "ENTITY_EXPERIENCE_ORB_PICKUP"
+
+  # Use decimals
+  volume: 1.0
+  pitch: 1.0

@@ -1,26 +1,26 @@
 package me.tyyni.yoChat.yoChatPlugin;
 
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
+import me.tyyni.yoChat.yoChatAPI.YoChatAPI;
 import me.tyyni.yoChat.yoChatPlugin.objects.ChatChannel;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
+import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
-@Slf4j
 public class ConfigManager {
 
     @Getter
     private static ConfigManager instance;
     private final File file;
+    @Getter
     private final FileConfiguration config;
     private final YoChat plugin;
 
@@ -32,13 +32,15 @@ public class ConfigManager {
     private boolean useLuckPerms;
     @Getter
     private boolean usePlaceholderAPI;
+    @Getter
+    private boolean useVault;
 
     @Getter
     private String chatFormat;
     @Getter
     private String channelFormat;
-    @Getter
 
+    @Getter
     private boolean useChannelSystem;
     @Getter
     private ChatChannel defaultChannel;
@@ -50,9 +52,9 @@ public class ConfigManager {
     @Getter
     private String blockedWordMessage;
     @Getter
-    private String muteChannelUrl;
+    private String muteWebhookUrl;
     @Getter
-    private String unmuteChannelUrl;
+    private String unmuteWebhookUrl;
     @Getter
     private boolean sendResponseCode;
     @Getter
@@ -61,9 +63,43 @@ public class ConfigManager {
     private boolean webhookEnabled;
 
     @Getter
-    private boolean useMuteMessage;
+    private boolean useMutedMessage;
     @Getter
-    private String muteMessage;
+    private String mutedMessage;
+    @Getter
+    private boolean useYouGotMutedMessage;
+    @Getter
+    private String youGotMutedMessage;
+    @Getter
+    private boolean useYouGotUnmutedMessage;
+    @Getter
+    private String youGotUnmutedMessage;
+    @Getter
+    private String muteCheckerInterval;
+
+    @Getter
+    private boolean useChannelSpecificFormatting;
+    @Getter
+    private Map<ChatChannel, String> channelsFormats;
+    @Getter
+    private boolean minimessageStrictMode;
+    @Getter
+    private boolean useTimeEndedMessage;
+    @Getter
+    private String timeEndedMessage;
+
+    @Getter
+    private boolean useMentioning;
+    @Getter
+    private String mentioningFormat;
+    @Getter
+    private boolean useSound;
+    @Getter
+    private Sound sound;
+    @Getter
+    private Float soundVolume;
+    @Getter
+    private Float soundPitch;
 
     public ConfigManager(YoChat plugin) {
         this.plugin = plugin;
@@ -84,33 +120,63 @@ public class ConfigManager {
             plugin.getLogger().severe("Could not reload config.yml: " + e.getMessage());
         }
 
-        PrefixManager prefixManager = plugin.getPrefixManager();
         ChannelManager channelManager = plugin.getChannelManager();
-
-        prefixManager.getPrefixes().clear();
 
         debug = config.getBoolean("general.debug", false);
         isEnabled = config.getBoolean("general.enabled", true);
+        useChannelSystem = config.getBoolean("general.use-channel-system", true);
+        defaultChannel = channelManager.getChannel(config.getString("general.default-channel", "global"));
+
         useLuckPerms = config.getBoolean("Addidional.useLuckPerms", true);
+        useVault = config.getBoolean("Addidional.useVault", false);
         usePlaceholderAPI = config.getBoolean("Addidional.usePlaceholderAPI", true);
 
         chatFormat = config.getString("formatting.chat-format", "{player}: {message}");
         channelFormat = config.getString("formatting.channel-format", "{player}: {message}");
 
-        useChannelSystem = config.getBoolean("general.use-channel-system", true);
-        defaultChannel = channelManager.getChannel(config.getString("general.default-channel", "global"));
-
         isModerationEnabled = config.getBoolean("moderation.enabled", true);
         blockedwords = config.getStringList("moderation.blocked-words");
         blockedWordMessage = config.getString("moderation.bad-word-message", "<red>Please speak respectfully on this server!</red>");
-        sendResponseCode = config.getBoolean("moderation.webhook-send-response-code", true);
-        sendResponseBody = config.getBoolean("moderation.webhook-send-response-body", true);
-        unmuteChannelUrl = config.getString("moderation.webhook-unmute-channel-url");
-        muteChannelUrl = config.getString("moderation.webhook-mute-channel-url");
+
+        sendResponseCode = config.getBoolean("moderation.discord-webhook.webhook-send-response-code", true);
+        sendResponseBody = config.getBoolean("moderation.discord-webhook.webhook-send-response-body", true);
+        unmuteWebhookUrl = config.getString("moderation.discord-webhook.unmute-webhook-url");
+        muteWebhookUrl = config.getString("moderation.discord-webhook.mute-webhook-url");
         webhookEnabled = config.getBoolean("moderation.discord-webhook.enabled", true);
 
-        useMuteMessage = config.getBoolean("moderation.use-mute-message", true);
-        muteMessage = config.getString("moderation.mute-message", "<red>You are muted for the reason <b>'{reason}'</b></red>");
+        useMutedMessage = config.getBoolean("moderation.use-muted-message", true);
+        mutedMessage = config.getString("moderation.muted-message", "<red>You are muted for the reason <b>'{reason}'</b></red>");
+        useYouGotMutedMessage = config.getBoolean("moderation.use-yougotmuted-message", true);
+        youGotMutedMessage = config.getString("moderation.yougotmuted-message", "<red>You are muted for the reason <b>'{reason}'</b></red>");
+        useYouGotUnmutedMessage = config.getBoolean("moderation.use-yougotunmuted-message", true);
+        youGotUnmutedMessage = config.getString("moderation.use-yougotunmuted-message", "<green>You got unmuted by <b>'{pardoner}'</b></green>");
+        useTimeEndedMessage = config.getBoolean("moderation.use-timeended-message", true);
+        timeEndedMessage = config.getString("moderation.timeended-message", "<green>Your mute is over!</green>");
+        muteCheckerInterval = config.getString("moderation.mute-checker-interval", "10s");
+
+        useChannelSpecificFormatting = config.getBoolean("channel-specific-formatting.enabled", false);
+
+        useMentioning = config.getBoolean("mentioning.enabled", true);
+        mentioningFormat = config.getString("mentioning.format", "<blue>@{name}</blue>");
+        useSound = config.getBoolean("mentioning.use-sound", true);
+
+        String soundname = config.getString("mentioning.sound", "ENTITY_EXPERIENCE_ORB_PICKUP");
+        NamespacedKey soundKey = NamespacedKey.minecraft(soundname.toLowerCase().replace("_", "."));
+        sound = Registry.SOUNDS.get(soundKey);
+        soundVolume = (float) config.getDouble("mentioning.volume", 1.0);
+        soundPitch = (float) config.getDouble("mentioning.pitch", 1.0);
+
+        minimessageStrictMode = config.getBoolean("minimessage-customization.strict-mode", false);
+        ConfigurationSection channelSpecificFormats = config.getConfigurationSection("channel-specific-formatting.formats");
+        if(channelSpecificFormats != null) {
+            for(String key : channelSpecificFormats.getKeys(false)) {
+                ChatChannel channel = YoChatAPI.getInstance().getChannelManager().getChannel(key);
+                String format = channelSpecificFormats.getString("format", null);
+                if(channel != null) {
+                    channel.setFormat(format);
+                }
+            }
+        }
 
         if (defaultChannel == null) {
             plugin.getLogger().warning("Default channel not found! Using global.");
@@ -122,64 +188,31 @@ public class ConfigManager {
             prefix = plugin.getAlternativePrefix();
         }
 
-        Component prefixComponent = parse(prefix);
+        Component prefixComponent = YoChatAPI.getInstance().getMessageParseManager().parseAdmin(prefix);
         plugin.setYoChatPrefix(prefixComponent);
-
-        ConfigurationSection prefixes = config.getConfigurationSection("prefixes");
-        if (prefixes != null) {
-            for (String key : prefixes.getKeys(false)) {
-                try {
-                    UUID uuid = UUID.fromString(key);
-                    String p = prefixes.getString(key, "");
-                    prefixManager.getPrefixes().put(uuid, p);
-                } catch (IllegalArgumentException e) {
-                    plugin.getLogger().warning("Invalid UUID in config: " + key);
-                }
-            }
-        }
 
         if (debug) {
             plugin.getLogger().info("[DEBUG] Config reloaded and variables updated!");
+        }
+
+        if(!useLuckPerms && !useVault) {
+            plugin.getLogger().severe("Configuration error!");
+            plugin.getLogger().severe("LuckPerms and Vault not enabled");
+            plugin.getLogger().severe("YoChat needs at least one of them to work");
+
+            if(Bukkit.getPluginManager().isPluginEnabled("Vault")) {
+                useVault = true;
+            } else if(Bukkit.getPluginManager().isPluginEnabled("LuckPerms")) {
+                useLuckPerms = true;
+            } else {
+                plugin.getLogger().warning("Disabled plugin because LuckPerms ja LuckPerms both are not enabled!");
+                Bukkit.getPluginManager().disablePlugin(plugin);
+            }
         }
 
         if(!isEnabled) {
             plugin.getLogger().warning("Disabled plugin!");
             Bukkit.getPluginManager().disablePlugin(plugin);
         }
-    }
-
-    public void save() {
-        PrefixManager prefixManager = plugin.getPrefixManager();
-        ConfigurationSection prefixes = config.getConfigurationSection("prefixes");
-        if (prefixes == null) prefixes = config.createSection("prefixes");
-
-        for (UUID uuid : prefixManager.getPrefixes().keySet()) {
-            String prefix = prefixManager.getPrefixes().get(uuid);
-            prefixes.set(uuid.toString(), prefix);
-        }
-
-        try {
-            config.save(file);
-        } catch (Exception e) {
-            plugin.getLogger().severe("Failed to save config: " + e.getMessage());
-        }
-
-        if (debug) {
-            plugin.getLogger().info("[DEBUG] " + "Saved config!");
-        }
-    }
-
-    public Component parse(String input) {
-        if (input == null || input.isEmpty()) return Component.empty();
-
-        String legacyProcessed = input.replace('&', '§');
-
-        Component legacyComponent = LegacyComponentSerializer.legacySection().deserialize(legacyProcessed.replace('&', '§'));
-
-        if (input.contains("<") && input.contains(">")) {
-            return MiniMessage.miniMessage().deserialize(input);
-        }
-
-        return legacyComponent;
     }
 }

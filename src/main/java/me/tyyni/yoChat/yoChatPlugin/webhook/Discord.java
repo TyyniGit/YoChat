@@ -2,7 +2,6 @@ package me.tyyni.yoChat.yoChatPlugin.webhook;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import me.tyyni.yoChat.yoChatPlugin.ConfigManager;
 
@@ -15,17 +14,14 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Webhook system by SMCode (<a href="https://www.youtube.com/watch?v=vvDrp5jBsYQ">Link to the video</a>)
  */
+
 @Slf4j
 public class Discord {
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
-    @Getter
-    private final String MUTE_CHANNEL_URL = ConfigManager.getInstance().getMuteChannelUrl();
-    @Getter
-    private final String UNMUTE_CHANNEL_URL = ConfigManager.getInstance().getUnmuteChannelUrl();
 
     public static void sendMessage(WebhookPayload payload, String webhookUrl) {
         if (webhookUrl == null || webhookUrl.isEmpty()) {
-            log.warn("webhookUrl is null or empty. Message not sent.");
+            log.warn("Webhook URL is null or empty. Message not sent.");
             return;
         }
 

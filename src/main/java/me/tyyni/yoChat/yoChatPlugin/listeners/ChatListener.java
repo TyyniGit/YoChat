@@ -3,7 +3,7 @@ package me.tyyni.yoChat.yoChatPlugin.listeners;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import me.tyyni.yoChat.yoChatPlugin.ConfigManager;
 import me.tyyni.yoChat.yoChatPlugin.MuteManager;
-import me.tyyni.yoChat.yochatAPI.YoChatAPI;
+import me.tyyni.yoChat.yoChatAPI.YoChatAPI;
 import me.tyyni.yoChat.yoChatPlugin.objects.ChatChannel;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -14,23 +14,18 @@ import org.bukkit.event.Listener;
 
 import java.util.Locale;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class ChatListener implements Listener {
-    private final Pattern blockedPattern;
-
-    {
-        blockedPattern = Pattern.compile("\\b(" + String.join("|", ConfigManager.getInstance().getBlockedwords()) + ")\\b", Pattern.CASE_INSENSITIVE);
-    }
 
     @EventHandler
     public void onChat(AsyncChatEvent event) {
         Player player = event.getPlayer();
-        event.setCancelled(true);
+        String plainText = PlainTextComponentSerializer.plainText().serialize(event.originalMessage()).toLowerCase(Locale.ROOT);
 
-        if (ConfigManager.getInstance().isUseMuteMessage()) {
+        event.setCancelled(true);
+        if (ConfigManager.getInstance().isUseMutedMessage()) {
             if (MuteManager.isMuted(player)) {
-                Component formattedMuteMessage = YoChatAPI.getInstance().getChatManager().formatMuteMessage(ConfigManager.getInstance().getMuteMessage(), player);
+                Component formattedMuteMessage = YoChatAPI.getInstance().getChatManager().formatMuteMessage(ConfigManager.getInstance().getMutedMessage(), player);
                 player.sendMessage(formattedMuteMessage);
                 return;
             }
@@ -38,8 +33,7 @@ public class ChatListener implements Listener {
 
         if (ConfigManager.getInstance().isModerationEnabled()) {
 
-            String plainText = PlainTextComponentSerializer.plainText().serialize(event.originalMessage()).toLowerCase(Locale.ROOT);
-            Matcher matcher = blockedPattern.matcher(plainText);
+            Matcher matcher = YoChatAPI.getInstance().getChatManager().getBlockedPattern().matcher(plainText);
 
             if (matcher.find()) {
                 String blockedword = matcher.group();
@@ -49,10 +43,8 @@ public class ChatListener implements Listener {
             }
         }
 
-        Component formattedMessage = YoChatAPI.getInstance().getChatManager().formatMessage(player, event.originalMessage());
-
         if (!ConfigManager.getInstance().isUseChannelSystem()) {
-            YoChatAPI.sendGlobalMessage(formattedMessage);
+            YoChatAPI.sendGlobalMessage(event.originalMessage(), player);
             return;
         }
 
@@ -65,6 +57,5 @@ public class ChatListener implements Listener {
         }
 
         YoChatAPI.getInstance().getChannelManager().sendToChannel(channel, player, event.originalMessage());
-
     }
 }

@@ -1,283 +1,322 @@
 package me.tyyni.yoChat.yoChatPlugin;
 
+import lombok.Getter;
+import lombok.Setter;
 import me.clip.placeholderapi.PlaceholderAPI;
 import me.tyyni.yoChat.yoChatPlugin.objects.ChatChannel;
 import me.tyyni.yoChat.yoChatPlugin.objects.MutedPlayer;
-import me.tyyni.yoChat.yochatAPI.YoChatAPI;
+import me.tyyni.yoChat.yoChatAPI.YoChatAPI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.model.user.User;
+import net.milkbowl.vault.chat.Chat;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.RegisteredServiceProvider;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class ChatManager {
+    @Getter
+    @Setter
+    private Chat vaultChat = null;
 
+    @Getter
+    private Pattern blockedPattern;
     private final YoChat plugin;
+    private final ConfigManager config = ConfigManager.getInstance();
+    private final MessageParseManager mpm = YoChatAPI.getInstance().getMessageParseManager();
+
     public ChatManager(YoChat plugin) {
         this.plugin = plugin;
+
+        if (setupChat()) {
+            if (ConfigManager.getInstance().isDebug()) {
+                plugin.getLogger().info("Vault chat hook enabled!");
+            }
+        }
+    }
+
+    private boolean setupChat() {
+        if (Bukkit.getPluginManager().getPlugin("Vault") == null) {
+            return false;
+        }
+
+        RegisteredServiceProvider<Chat> rsp = Bukkit.getServer().getServicesManager().getRegistration(Chat.class);
+        if (rsp == null) {
+            return false;
+        }
+
+        setVaultChat(rsp.getProvider());
+        return true;
     }
 
     /**
-    * Message formatting for non channel messages
-     * @param sender Player who sent the message
-     * @param message The sent message to format
-     * @return Component
-    **/
+     * The master method for all the other formatters
+     *
+     * @param format       The format the method should be using
+     * @param player       If the format needs a player to function, it is possible to add it here. It has the @Nullable annotation.
+     * @param placeholders The placeholders the method should be parsing
+     * @return format when its fully processed
+     */
+    private String processFormat(String format, @Nullable Player player, Map<String, String> placeholders) {
+        String finalLine = format;
+
+        String prefix = "";
+        String suffix = "";
+        String name = (player != null) ? player.getName() : "Unknown";
+
+        if (player != null) {
+            if (config.isUseLuckPerms()) {
+                prefix = getLuckPermsPrefix(player);
+                suffix = getLuckPermsSuffix(player);
+            }
+
+            if (config.isUseVault() && (prefix.isEmpty() || suffix.isEmpty())) {
+                if (vaultChat != null) {
+                    if (prefix.isEmpty()) prefix = vaultChat.getPlayerPrefix(player);
+                    if (suffix.isEmpty()) suffix = vaultChat.getPlayerSuffix(player);
+                }
+            }
+
+            if (prefix.isEmpty() && suffix.isEmpty()) {
+                prefix = "";
+                suffix = "";
+
+                plugin.getLogger().warning("No prefix or suffix provided!");
+            }
+        }
+
+        // Prefix and suffix systems might be implemented in the future.
+        /* if (prefix.isEmpty() && player != null) {
+         *    prefix = YoChatAPI.getPrefix(player);
+         *    suffix = YoChatAPI.getSuffix(player);
+         * }
+         */
+
+        finalLine = finalLine.replace("{prefix}", prefix)
+                .replace("{suffix}", suffix)
+                .replace("{player}", name);
+
+        if (placeholders != null) {
+            for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+                finalLine = finalLine.replace(entry.getKey(), entry.getValue());
+            }
+        }
+
+        if (config.isUsePlaceholderAPI() && Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            finalLine = PlaceholderAPI.setPlaceholders(player, finalLine);
+        }
+
+        if (config.isDebug()) {
+            plugin.getLogger().info("DEBUG: Full line: " + finalLine);
+        }
+
+        return finalLine;
+    }
+
     public Component formatMessage(Player sender, Component message) {
-        ConfigManager config = ConfigManager.getInstance();
-
-        String prefix = "";
-        String suffix = "";
-        if (config.isUseLuckPerms()) {
-            prefix = getLuckPermsPrefix(sender);
-            suffix = getLuckPermsSuffix(sender);
-        }
-
-        if(prefix.isEmpty()) {
-            prefix = YoChatAPI.getPrefix(sender);
-            suffix = YoChatAPI.getSuffix(sender);
-        }
-
-        String rawMsgText = PlainTextComponentSerializer.plainText().serialize(message);
-
-        String format = config.getChatFormat();
-
-        String fullLine = format
-                .replace("{prefix}", prefix)
-                .replace("{player}", sender.getName())
-                .replace("{suffix}", suffix)
-                .replace("{message}", rawMsgText);
-
-        if (config.isUsePlaceholderAPI() && Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
-            fullLine = PlaceholderAPI.setPlaceholders(sender, fullLine);
-        }
-
-        if (config.isDebug()) {
-            plugin.getLogger().info("DEBUG: Full line before parse: " + fullLine);
-        }
-
-        return config.parse(fullLine);
+        String rawText = PlainTextComponentSerializer.plainText().serialize(message);
+        String formatted = processFormat(config.getChatFormat(), sender, Map.of("{message}", rawText));
+        return mpm.parse(sender, formatted);
     }
 
-    /**
-     * Help method for sending messages to all players on the server
-     * @param message The message to send
-     */
-    public void broadcast(Component message) {
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            player.sendMessage(message);
-        }
-
-        Bukkit.getConsoleSender().sendMessage(message);
-    }
-
-    /**
-     * Message formatting for channel messages
-     * @param channel The channel the message was sent to
-     * @param sender Player who sent the message
-     * @param message The sent message to format
-     * @return Component
-     */
     public Component formatChannelMessage(ChatChannel channel, Player sender, Component message) {
-        ConfigManager config = ConfigManager.getInstance();
+        String rawText = PlainTextComponentSerializer.plainText().serialize(message);
+        String format = (channel.getFormat() != null && !channel.getFormat().isEmpty()) ? channel.getFormat() : config.getChannelFormat();
 
-        String prefix = "";
-        String suffix = "";
-        if (config.isUseLuckPerms()) {
-          prefix = getLuckPermsPrefix(sender);
-          suffix = getLuckPermsSuffix(sender);
-        }
+        Map<String, String> placeholders = Map.of(
+                "{channel}", channel.getName(),
+                "{message}", rawText
+        );
 
-        String rawMsgText = PlainTextComponentSerializer.plainText().serialize(message);
-
-        String format = config.getChannelFormat();
-
-        String fullLine = format
-                .replace("{prefix}", prefix)
-                .replace("{player}", sender.getName())
-                .replace("{suffix}", suffix)
-                .replace("{channel}", channel.getName())
-                .replace("{message}", rawMsgText);
-
-
-        if (config.isUsePlaceholderAPI() && Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
-            fullLine = PlaceholderAPI.setPlaceholders(sender, fullLine);
-        }
-
-        if (config.isDebug()) {
-            plugin.getLogger().info("DEBUG: Full line before parse: " + fullLine);
-        }
-
-        return config.parse(fullLine);
+        return mpm.parse(sender, processFormat(format, sender, placeholders));
     }
-
-    /**
-     * Method for finding the LuckPerms prefix of a specific player
-     * @param player The player whose prefix the method tries to find
-     * @return String
-     */
-    private String getLuckPermsPrefix(Player player) {
-        LuckPerms lp = LuckPermsProvider.get();
-        User user = lp.getUserManager().getUser(player.getUniqueId());
-        if (user != null) {
-            return user.getCachedData().getMetaData().getPrefix() != null ? user.getCachedData().getMetaData().getPrefix() : "";
-        }
-
-        return "";
-    }
-
-    /**
-     * Method for finding the LuckPerms suffix of a specific player
-     * @param player The player whose suffix the method tries to find
-     * @return String
-     */
-    private String getLuckPermsSuffix(Player player) {
-        LuckPerms lp = LuckPermsProvider.get();
-        User user = lp.getUserManager().getUser(player.getUniqueId());
-        if (user != null) {
-            return user.getCachedData().getMetaData().getSuffix() != null ? user.getCachedData().getMetaData().getSuffix() : "";
-        }
-
-        return "";
-    }
-
-    /**
-     * Message formatting for non channel messages
-     * @param format The sent message to format
-     * @param sender Player who sent the message
-     * @param blockedword The word that got the message blocked
-     * @return Component
-     **/
 
     public Component formatMessage(String format, Player sender, String blockedword) {
-        ConfigManager config = ConfigManager.getInstance();
-
-        String prefix = "";
-        String suffix = "";
-        if (config.isUseLuckPerms()) {
-            prefix = getLuckPermsPrefix(sender);
-            suffix = getLuckPermsSuffix(sender);
-        }
-
-
-        String fullLine = format
-                .replace("{prefix}", prefix)
-                .replace("{player}", sender.getName())
-                .replace("{suffix}", suffix)
-                .replace("{blockedword}", blockedword);
-
-        if (config.isUsePlaceholderAPI() && Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
-            fullLine = PlaceholderAPI.setPlaceholders(sender, fullLine);
-        }
-
-        if (config.isDebug()) {
-            plugin.getLogger().info("DEBUG: Full line before parse: " + fullLine);
-        }
-
-        return config.parse(fullLine);
+        return mpm.parseAdmin(processFormat(format, sender, Map.of("{blockedword}", blockedword)));
     }
 
-    /**
-     * Message formatting for the mute message
-     * @param format The sent message to format
-     * @param sender Player who sent the message
-     * @return Component
-     */
+    public String formatMention(String format, Player receiver, Player mentioner) {
+        String mentionerprefix = "";
+        String mentionersuffix = "";
+
+        if (config.isUseLuckPerms()) {
+            mentionerprefix = getLuckPermsPrefix(mentioner);
+            mentionersuffix = getLuckPermsSuffix(mentioner);
+        }
+
+        if (config.isUseVault() && (mentionerprefix.isEmpty() || mentionersuffix.isEmpty())) {
+            if (vaultChat != null) {
+                if (mentionerprefix.isEmpty()) mentionerprefix = vaultChat.getPlayerPrefix(mentioner);
+                if (mentionersuffix.isEmpty()) mentionersuffix = vaultChat.getPlayerSuffix(mentioner);
+            }
+        }
+
+
+        Map<String, String> placeholders = Map.of(
+                "{name}", receiver.getName(),
+                "{mentionername}", mentioner.getName(),
+                "{mentionersuffix}", mentionersuffix,
+                "{mentionerprefix}", mentionerprefix
+        );
+
+        return processFormat(format, receiver, placeholders);
+    }
+
     public Component formatMuteMessage(String format, Player sender) {
-        ConfigManager config = ConfigManager.getInstance();
-        MutedPlayer mutedPlayer = YoChatAPI.getMutedPlayer(sender.getUniqueId());
-
-        String prefix = "";
-        String suffix = "";
-        if (config.isUseLuckPerms()) {
-            prefix = getLuckPermsPrefix(sender);
-            suffix = getLuckPermsSuffix(sender);
-        }
-
-
-        String fullLine = format
-                .replace("{prefix}", prefix)
-                .replace("{player}", sender.getName())
-                .replace("{suffix}", suffix)
-                .replace("{reason}", mutedPlayer.getReason() != null ? mutedPlayer.getReason() : "No reason")
-                .replace("{duration}", parseLong(mutedPlayer.getDuration()))
-                .replace("{punisher}", mutedPlayer.getPunisher())
-                .replace("{whenstarted}", getFormattedDate(mutedPlayer.whenStarted()))
-                .replace("{timeleft}", getRemainingTime(mutedPlayer.whenStarted(), mutedPlayer.getDuration()));
-
-        if (config.isUsePlaceholderAPI() && Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
-            fullLine = PlaceholderAPI.setPlaceholders(sender, fullLine);
-        }
-
-        if (config.isDebug()) {
-            plugin.getLogger().info("DEBUG: Full line before parse: " + fullLine);
-        }
-
-        return config.parse(fullLine);
+        MutedPlayer mp = YoChatAPI.getMutedPlayer(sender.getUniqueId());
+        Map<String, String> placeholders = Map.of(
+                "{reason}", mp.getReason() != null ? mp.getReason() : "No reason",
+                "{duration}", parseLong(mp.getDuration()),
+                "{punisher}", mp.getPunisher(),
+                "{whenstarted}", getFormattedDate(mp.whenStarted()),
+                "{timeleft}", getRemainingTime(mp.whenStarted(), mp.getDuration())
+        );
+        return mpm.parseAdmin(processFormat(format, sender, placeholders));
     }
 
-    public long parseDuration(String duration) {
-        String unit = duration.replaceAll("\\d+", "");
-        long amount = Long.parseLong(duration.replaceAll("[a-zA-Z]+", ""));
+    public Component formatYouGotMutedMessage(String format, String punisher, OfflinePlayer target, String duration, @Nullable String reason) {
+        Map<String, String> placeholders = Map.of(
+                "{reason}", reason != null ? reason : "No reason",
+                "{duration}", duration,
+                "{punisher}", punisher
+        );
+        return mpm.parseAdmin(processFormat(format, target.getPlayer(), placeholders));
+    }
 
-        return switch (unit) {
-            case "s" -> amount * 1000L;
-            case "m" -> amount * 1000L * 60L;
-            case "h" -> amount * 1000L * 3600L;
-            case "d" -> amount * 1000L * 3600L * 24L;
-            case "w" -> amount * 1000L * 3600L * 24L * 7L;
-            case "mo" -> amount * 1000L * 3600L * 24L * 30L;
-            case "y" -> amount * 1000L * 3600L * 24L * 365L;
-            default -> 0L;
-        };
+    public Component formatYouGotUnmutedMessage(String format, String pardoner, OfflinePlayer target, @Nullable String reason) {
+        Map<String, String> placeholders = Map.of(
+                "{reason}", reason != null ? reason : "No reason",
+                "{pardoner}", pardoner
+        );
+        return mpm.parseAdmin(processFormat(format, target.getPlayer(), placeholders));
+    }
+
+    public Component formatTimeEndedMessage(String format, Player player) {
+        return mpm.parseAdmin(processFormat(format, player, Map.of()));
+    }
+
+    public void broadcast(Component message, Player sender) {
+        String rawText = PlainTextComponentSerializer.plainText().serialize(message);
+        String mentionFormat = ConfigManager.getInstance().getMentioningFormat();
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+
+            String finalContent = rawText;
+
+            if (containsName(player, rawText)) {
+                String replacement = formatMention(mentionFormat, player, sender);
+                finalContent = rawText.replaceAll("(?i)" + Pattern.quote(player.getName()), replacement);
+
+                if(ConfigManager.getInstance().isUseSound()) {
+                    player.playSound(player.getLocation(), ConfigManager.getInstance().getSound(), ConfigManager.getInstance().getSoundVolume(), ConfigManager.getInstance().getSoundPitch());
+                }
+            }
+
+            player.sendMessage(formatMessage(sender, Component.text(finalContent)));
+        }
+
+        Bukkit.getConsoleSender().sendMessage(formatMessage(sender, message));
+    }
+
+    private String getLuckPermsPrefix(Player player) {
+        User user = LuckPermsProvider.get().getUserManager().getUser(player.getUniqueId());
+        return (user != null && user.getCachedData().getMetaData().getPrefix() != null) ? user.getCachedData().getMetaData().getPrefix() : "";
+    }
+
+    private String getLuckPermsSuffix(Player player) {
+        User user = LuckPermsProvider.get().getUserManager().getUser(player.getUniqueId());
+        return (user != null && user.getCachedData().getMetaData().getSuffix() != null) ? user.getCachedData().getMetaData().getSuffix() : "";
     }
 
     public String parseLong(long duration) {
-        if(duration == -1L) {
-            return "permanent";
-        }
-
+        if (duration == -1L) return "permanent";
         if (duration <= 0) return "0s";
-
         long seconds = (duration / 1000) % 60;
         long minutes = (duration / (1000 * 60)) % 60;
         long hours = (duration / (1000 * 60 * 60)) % 24;
         long days = (duration / (1000 * 60 * 60 * 24));
-
         StringBuilder sb = new StringBuilder();
         if (days > 0) sb.append(days).append("d ");
         if (hours > 0) sb.append(hours).append("h ");
         if (minutes > 0) sb.append(minutes).append("m ");
         if (seconds > 0 || sb.isEmpty()) sb.append(seconds).append("s");
-
         return sb.toString().trim();
     }
 
     public String getFormattedDate(long whenStarted) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
-                .withZone(ZoneId.systemDefault());
-
-        return formatter.format(Instant.ofEpochMilli(whenStarted));
+        return DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm").withZone(ZoneId.systemDefault()).format(Instant.ofEpochMilli(whenStarted));
     }
 
     public String getRemainingTime(long whenStarted, long durationMillis) {
-        if (durationMillis <= -1) {
-            return "Permanent";
-        }
-
-        long expiryTime = whenStarted + durationMillis;
-        long remainingMillis = expiryTime - System.currentTimeMillis();
-
-        if (remainingMillis <= 0) {
-            return "0s";
-        }
-
-        return parseLong(remainingMillis);
+        if (durationMillis <= -1) return "Permanent";
+        long remaining = (whenStarted + durationMillis) - System.currentTimeMillis();
+        return remaining <= 0 ? "0s" : parseLong(remaining);
     }
+
+    public void reloadBlockedWords() {
+        List<String> words = ConfigManager.getInstance().getBlockedwords();
+        if (words == null || words.isEmpty()) {
+            this.blockedPattern = Pattern.compile("BLOCK_LIST_IS_EMPTY_DO_NOT_MATCH");
+            return;
+        }
+        String regex = words.stream().filter(w -> w != null && !w.trim().isEmpty()).map(Pattern::quote).collect(Collectors.joining("|"));
+        blockedPattern = Pattern.compile("\\b(" + regex + ")\\b", Pattern.CASE_INSENSITIVE);
+    }
+
+    /**
+     * Parses the duration String to long
+     *
+     * @param duration Duration in the form of "10m" or "2h"
+     * @return Duration in millis
+     */
+    public long parseDuration(String duration) {
+        if (duration == null || duration.isEmpty()) return 0L;
+        
+        String unit = duration.replaceAll("\\d+", "").toLowerCase();
+        String amountStr = duration.replaceAll("[a-zA-Z]+", "");
+
+        if (amountStr.isEmpty()) return 0L;
+        long amount = Long.parseLong(amountStr);
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime future;
+
+        return switch (unit) {
+            case "s" -> amount * 1000L;
+            case "m" -> amount * 60000L;
+            case "h" -> amount * 3600000L;
+            case "d" -> amount * 86400000L;
+            case "w" -> amount * 604800000L;
+
+            case "mo" -> {
+                future = now.plusMonths(amount);
+                yield ChronoUnit.MILLIS.between(now, future);
+            }
+            case "y" -> {
+                future = now.plusYears(amount);
+                yield ChronoUnit.MILLIS.between(now, future);
+            }
+            default -> 0L;
+        };
+    }
+
+    public boolean containsName(Player player, String text) {
+        return text.toLowerCase(Locale.ROOT).contains(player.getName().toLowerCase(Locale.ROOT));
+    }
+
+
 }

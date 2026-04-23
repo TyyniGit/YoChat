@@ -1,11 +1,12 @@
-C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yochatAPI\interfaces\YoChatProvider.java
-C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yochatAPI\YoChatAPI.java
+C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatAPI\interfaces\YoChatProvider.java
+C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatAPI\YoChatAPI.java
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\ChannelManager.java
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\ChatManager.java
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\commands\YoChatCommand.java
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\ConfigManager.java
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\listeners\ChatListener.java
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\listeners\PlayerJoinListener.java
+C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\MessageParseManager.java
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\MuteManager.java
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\objects\ChatChannel.java
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\objects\MutedPlayer.java

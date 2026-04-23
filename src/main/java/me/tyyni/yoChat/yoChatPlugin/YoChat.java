@@ -3,13 +3,12 @@ package me.tyyni.yoChat.yoChatPlugin;
 import com.tchristofferson.configupdater.ConfigUpdater;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 import me.tyyni.yoChat.yoChatPlugin.commands.YoChatCommand;
 import me.tyyni.yoChat.yoChatPlugin.listeners.ChatListener;
 import me.tyyni.yoChat.yoChatPlugin.listeners.PlayerJoinListener;
 import me.tyyni.yoChat.yoChatPlugin.objects.ChatChannel;
-import me.tyyni.yoChat.yochatAPI.YoChatAPI;
-import me.tyyni.yoChat.yochatAPI.interfaces.YoChatProvider;
+import me.tyyni.yoChat.yoChatAPI.YoChatAPI;
+import me.tyyni.yoChat.yoChatAPI.interfaces.YoChatProvider;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Bukkit;
@@ -21,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
 
-@Slf4j
 public final class YoChat extends JavaPlugin implements YoChatProvider {
 
     @Getter
@@ -34,12 +32,15 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
     @Getter
     private final TextColor highlightColor = TextColor.fromHexString("#9863E7");
 
-    private PrefixManager prefixManager;
+    /*
+    * private PrefixManager prefixManager;
+    * private SuffixManager suffixManager;
+    */
     private ChatManager chatManager;
     private ChannelManager channelManager;
     private ConfigManager configManager;
-    private SuffixManager suffixManager;
     private MuteManager muteManager;
+    private MessageParseManager messageParseManager;
 
     @Override
     public void onLoad() {
@@ -48,23 +49,24 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
 
     @Override
     public void onEnable() {
-        saveDefaultConfig();
+        YoChatAPI.setProvider(this);
 
         try {
             ConfigUpdater.update(this, "config.yml", new File(getDataFolder(), "config.yml"));
         } catch (IOException e) {
-            log.error("Failed to update config.yml", e);
+            getLogger().severe("Failed to update config.yml" + e.getMessage());
         }
 
         reloadConfig();
 
         initializeManagers();
 
-        YoChatAPI.setProvider(this);
-
-        muteManager.load();
+        messageParseManager.setupMM();
         channelManager.loadChannels();
         configManager.load();
+        muteManager.load();
+        muteManager.startMuteChecker();
+        chatManager.reloadBlockedWords();
 
         registerEvents();
         registerCommands();
@@ -74,7 +76,6 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
 
     @Override
     public void onDisable() {
-        ConfigManager.getInstance().save();
         for(ChatChannel channel : channelManager.getChannels()) {
             for(Player player : channel.getMembers()) {
                 channel.removeMember(player);
@@ -86,12 +87,16 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
     }
 
     private void initializeManagers() {
-        prefixManager = new PrefixManager();
+        messageParseManager = new MessageParseManager();
+        configManager = new ConfigManager(this);
         chatManager = new ChatManager(this);
         channelManager = new ChannelManager(this);
-        configManager = new ConfigManager(this);
-        suffixManager = new SuffixManager();
         muteManager = new MuteManager(this);
+
+        /*
+        * suffixManager = new SuffixManager();
+        * prefixManager = new PrefixManager();
+        */
     }
 
     private void registerEvents() {
@@ -113,10 +118,6 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
         return this;
     }
 
-    @Override
-    public PrefixManager getPrefixManager() {
-        return prefixManager;
-    }
 
     @Override
     public ChatManager getChatManager() {
@@ -129,9 +130,21 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
     }
 
     @Override
-    public SuffixManager getSuffixManager() {return suffixManager;}
-
-    @Override
     public MuteManager getMuteManager() {return muteManager;}
 
+    @Override
+    public MessageParseManager getMessageParseManager() {return messageParseManager;}
+
+    /* Prefix system might be implemented in the future.
+     * @Override
+     * public PrefixManager getPrefixManager() {
+     *    return prefixManager;
+     * }
+     *
+     * Suffix system might be implemented in the future.
+     *  @Override
+     *  public SuffixManager getSuffixManager() {
+     *  return suffixManager;
+     * }
+     */
 }
