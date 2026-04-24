@@ -1,10 +1,10 @@
-# 💬 YoChat
+# YoChat
 
 **YoChat** is a modern, high-performance chat management plugin designed for Minecraft servers that demand flexibility and style. Powered by MiniMessage, it offers beautiful gradients, a robust channel system, and built-in moderation tools. It also features full legacy color code support.
 
 ---
 
-## ✨ Features
+## Features
 
 * **Modern Formatting:** Full support for Adventure MiniMessage (Gradients, Hover, Click events).
 * **Channel System:** Create separate chat environments (e.g., Global, Staff, Local).
@@ -15,7 +15,7 @@
 
 ---
 
-## 🛠️ Installation
+## Installation
 
 1.  Place the `YoChat.jar` into your server's `plugins` folder.
 2.  Ensure you have **LuckPerms** or **Vault** installed (required for prefixes/suffixes).
@@ -24,7 +24,7 @@
 
 ---
 
-## 📜 Commands & Permissions
+## Commands & Permissions
 
 | Command                                                     | Description                     | Permission                 |
 |:------------------------------------------------------------|:--------------------------------|:---------------------------|
@@ -36,13 +36,13 @@
 
 ---
 
-## ⚙️ Configuration Preview
+## Configuration Preview
 
 YoChat uses a highly customizable `config.yml`. You can customize **basically** everything from there. Always remember to use `/yochat reload` after changing the config, otherwise the changes won't take effect.
 
 ---
 
-## 🔗 Requirements
+## Requirements
 * **Java 17** or higher.
 * **Paper** (1.21.x recommended for best compatibility).
 * **LuckPerms** or **Vault** for prefix/suffix support.
@@ -50,7 +50,7 @@ YoChat uses a highly customizable `config.yml`. You can customize **basically** 
 
 ---
 
-## 💻 For Developers (API)
+## For Developers (API)
 You can hook into YoChat using our API:
 
 ```xml
