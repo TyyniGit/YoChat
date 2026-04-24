@@ -1,4 +1,4 @@
-# YoChat
+![YoChat full logo](https://cdn.modrinth.com/data/cached_images/2a9a9e0792ed0bb46bad0764cdb6713a433c4c45.png)
 
 **YoChat** is a modern, high-performance chat management plugin designed for Minecraft servers that demand flexibility and style. Powered by MiniMessage, it offers beautiful gradients, a robust channel system, and built-in moderation tools. It also features full legacy color code support.
 
