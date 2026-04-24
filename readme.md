@@ -20,7 +20,7 @@
 1.  Place the `YoChat.jar` into your server's `plugins` folder.
 2.  Ensure you have **LuckPerms** or **Vault** installed (required for prefixes/suffixes).
 3.  Restart your server to generate the configuration.
-4.  Configure your chat formats and channels in `config.yml`.
+4.  Configure your chat formats, moderation settings and more in `config.yml`.
 
 ---
 
