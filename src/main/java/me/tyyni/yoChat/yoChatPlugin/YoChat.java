@@ -9,6 +9,7 @@ import me.tyyni.yoChat.yoChatPlugin.listeners.PlayerJoinListener;
 import me.tyyni.yoChat.yoChatPlugin.objects.ChatChannel;
 import me.tyyni.yoChat.yoChatAPI.YoChatAPI;
 import me.tyyni.yoChat.yoChatAPI.interfaces.YoChatProvider;
+import me.tyyni.yoChat.yoChatPlugin.webhook.Discord;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -42,6 +43,8 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
     private ConfigManager configManager;
     private MuteManager muteManager;
     private MessageParseManager messageParseManager;
+    @Getter
+    private Discord discord;
 
     @Override
     public void onLoad() {
@@ -88,12 +91,12 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
     }
 
     private void initializeManagers() {
-        messageParseManager = new MessageParseManager();
-        configManager = new ConfigManager(this);
-        chatManager = new ChatManager(this);
-        channelManager = new ChannelManager(this);
-        muteManager = new MuteManager(this);
-
+        this.messageParseManager = new MessageParseManager();
+        this.configManager = new ConfigManager(this);
+        this.chatManager = new ChatManager(this);
+        this.channelManager = new ChannelManager(this);
+        this.muteManager = new MuteManager(this);
+        this.discord = new Discord();
         /*
         * suffixManager = new SuffixManager();
         * prefixManager = new PrefixManager();

@@ -25,7 +25,7 @@ public class ChatListener implements Listener {
         event.setCancelled(true);
         if (ConfigManager.getInstance().isUseMutedMessage()) {
             if (MuteManager.isMuted(player)) {
-                Component formattedMuteMessage = YoChatAPI.getInstance().getChatManager().formatMuteMessage(ConfigManager.getInstance().getMutedMessage(), player);
+                Component formattedMuteMessage = YoChatAPI.getPlugin().getChatManager().formatMuteMessage(ConfigManager.getInstance().getMutedMessage(), player);
                 player.sendMessage(formattedMuteMessage);
                 return;
             }
@@ -33,11 +33,11 @@ public class ChatListener implements Listener {
 
         if (ConfigManager.getInstance().isModerationEnabled()) {
 
-            Matcher matcher = YoChatAPI.getInstance().getChatManager().getBlockedPattern().matcher(plainText);
+            Matcher matcher = YoChatAPI.getPlugin().getChatManager().getBlockedPattern().matcher(plainText);
 
             if (matcher.find()) {
                 String blockedword = matcher.group();
-                Component formattedBadWordMessage = YoChatAPI.getInstance().getChatManager().formatMessage(ConfigManager.getInstance().getBlockedWordMessage(), player, blockedword);
+                Component formattedBadWordMessage = YoChatAPI.getPlugin().getChatManager().formatMessage(ConfigManager.getInstance().getBlockedWordMessage(), player, blockedword);
                 player.sendMessage(formattedBadWordMessage);
                 return;
             }
@@ -48,14 +48,14 @@ public class ChatListener implements Listener {
             return;
         }
 
-        ChatChannel channel = YoChatAPI.getInstance().getChannelManager().getChannelByPlayer(player);
+        ChatChannel channel = YoChatAPI.getPlugin().getChannelManager().getChannelByPlayer(player);
 
         if (channel == null) {
-            player.sendMessage(YoChatAPI.getInstance().getYoChatPrefix().append(
+            player.sendMessage(YoChatAPI.getPlugin().getYoChatPrefix().append(
                     Component.text("You don't belong to any channels! Please contact administrators.", NamedTextColor.RED)));
             return;
         }
 
-        YoChatAPI.getInstance().getChannelManager().sendToChannel(channel, player, event.originalMessage());
+        YoChatAPI.getPlugin().getChannelManager().sendToChannel(channel, player, event.originalMessage());
     }
 }

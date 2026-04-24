@@ -51,7 +51,7 @@ YoChat uses a highly customizable `config.yml`. You can customize **basically** 
 ---
 
 ## For Developers (API)
-You can hook into YoChat using our API:
+You can hook into YoChat using the YoChat API:
 
 ```xml
 <repository>
@@ -66,9 +66,10 @@ You can hook into YoChat using our API:
     <scope>provided</scope>
 </dependency>
 ```
-To access the API methods:
-```Java
-YoChatAPI api = YoChatAPI.getInstance();
-// Access the ChannelManager
-ChannelManager channelManager = api.getChannelManager();
+
+```java
+import me.tyyni.yoChat.yoChatAPI.YoChatAPI;
+import net.kyori.adventure.text.Component;
+
+YoChatAPI.sendGlobalMessage(Component.text("Hello from another plugin."), player);
 ```

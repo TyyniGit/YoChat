@@ -38,7 +38,7 @@ public class ChatManager {
     private Pattern blockedPattern;
     private final YoChat plugin;
     private final ConfigManager config = ConfigManager.getInstance();
-    private final MessageParseManager mpm = YoChatAPI.getInstance().getMessageParseManager();
+    private final MessageParseManager mpm = YoChatAPI.getPlugin().getMessageParseManager();
 
     public ChatManager(YoChat plugin) {
         this.plugin = plugin;
@@ -172,13 +172,16 @@ public class ChatManager {
 
     public Component formatMuteMessage(String format, Player sender) {
         MutedPlayer mp = YoChatAPI.getMutedPlayer(sender.getUniqueId());
-        Map<String, String> placeholders = Map.of(
-                "{reason}", mp.getReason() != null ? mp.getReason() : "No reason",
-                "{duration}", parseLong(mp.getDuration()),
-                "{punisher}", mp.getPunisher(),
-                "{whenstarted}", getFormattedDate(mp.whenStarted()),
-                "{timeleft}", getRemainingTime(mp.whenStarted(), mp.getDuration())
-        );
+        Map<String, String> placeholders = null;
+        if (mp != null) {
+            placeholders = Map.of(
+                    "{reason}", mp.getReason() != null ? mp.getReason() : "No reason",
+                    "{duration}", parseLong(mp.getDuration()),
+                    "{punisher}", mp.getPunisher(),
+                    "{whenstarted}", getFormattedDate(mp.whenStarted()),
+                    "{timeleft}", getRemainingTime(mp.whenStarted(), mp.getDuration())
+            );
+        }
         return mpm.parseAdmin(processFormat(format, sender, placeholders));
     }
 

@@ -5,7 +5,6 @@ import me.tyyni.yoChat.yoChatPlugin.ConfigManager;
 import me.tyyni.yoChat.yoChatPlugin.MuteManager;
 import me.tyyni.yoChat.yoChatPlugin.YoChat;
 import me.tyyni.yoChat.yoChatPlugin.objects.MutedPlayer;
-import me.tyyni.yoChat.yoChatPlugin.webhook.Discord;
 import me.tyyni.yoChat.yoChatPlugin.webhook.WebhookPayload;
 import me.tyyni.yoChat.yoChatAPI.YoChatAPI;
 import me.tyyni.yoChat.yoChatPlugin.objects.ChatChannel;
@@ -28,7 +27,7 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public class YoChatCommand implements TabExecutor {
-    private final YoChat plugin = YoChatAPI.getInstance();
+    private final YoChat plugin = YoChatAPI.getPlugin();
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
@@ -39,7 +38,7 @@ public class YoChatCommand implements TabExecutor {
 
         if (args.length == 0) {
             sender.sendMessage(plugin.getYoChatPrefix().append(
-                    Component.text("YoChat version " + YoChatAPI.getInstance().getPluginMeta().getVersion(), plugin.getMainColor())));
+                    Component.text("YoChat version " + YoChatAPI.getPlugin().getPluginMeta().getVersion(), plugin.getMainColor())));
             sender.sendMessage(Component.text("For help, use /yochat help", plugin.getMainColor()));
             return true;
         }
@@ -104,7 +103,7 @@ public class YoChatCommand implements TabExecutor {
             return;
         }
 
-        YoChat api = YoChatAPI.getInstance();
+        YoChat api = YoChatAPI.getPlugin();
         ConfigManager configManager = ConfigManager.getInstance();
         try {
             ConfigUpdater.update(plugin, "config.yml", new File(plugin.getDataFolder(), "config.yml"));
@@ -154,7 +153,7 @@ public class YoChatCommand implements TabExecutor {
                     sendNoPermissionMessage(sender);
                     return;
                 }
-                List<String> channels = YoChatAPI.getInstance().getChannelManager().getChannels().stream().map(ChatChannel::getName).toList();
+                List<String> channels = YoChatAPI.getPlugin().getChannelManager().getChannels().stream().map(ChatChannel::getName).toList();
                 sender.sendMessage(plugin.getYoChatPrefix().append(Component.text("Channels:", plugin.getMainColor())));
                 channels.forEach(channelName -> sender.sendMessage(Component.text("- ", plugin.getMainColor())
                         .append(Component.text(channelName, plugin.getHighlightColor()))));
@@ -215,7 +214,7 @@ public class YoChatCommand implements TabExecutor {
 
                 if (worlds.isEmpty()) worlds = null;
 
-                ChatChannel channel = YoChatAPI.getInstance().getChannelManager().createChannel(channelName, permission, radius, strictWorld, worlds);
+                ChatChannel channel = YoChatAPI.getPlugin().getChannelManager().createChannel(channelName, permission, radius, strictWorld, worlds);
                 if (channel != null) {
                     YoChatAPI.registerChannel(channel);
                     sender.sendMessage(plugin.getYoChatPrefix().append(
@@ -237,11 +236,11 @@ public class YoChatCommand implements TabExecutor {
                     return;
                 }
                 String channelName = args[2];
-                if (YoChatAPI.getInstance().getChannelManager().getChannel(channelName) == null) {
+                if (YoChatAPI.getPlugin().getChannelManager().getChannel(channelName) == null) {
                     sender.sendMessage(plugin.getYoChatPrefix().append(Component.text("No channel found with that name!", NamedTextColor.RED)));
                     return;
                 }
-                YoChatAPI.getInstance().getChannelManager().deleteChannel(channelName);
+                YoChatAPI.getPlugin().getChannelManager().deleteChannel(channelName);
                 sender.sendMessage(plugin.getYoChatPrefix().append(
                         Component.text("Channel ", plugin.getMainColor())
                                 .append(Component.text("'" + channelName + "'", plugin.getHighlightColor())
@@ -261,7 +260,7 @@ public class YoChatCommand implements TabExecutor {
                     return;
                 }
                 String channelName = args[2];
-                ChatChannel channel = YoChatAPI.getInstance().getChannelManager().getChannel(channelName);
+                ChatChannel channel = YoChatAPI.getPlugin().getChannelManager().getChannel(channelName);
                 if (channel == null) {
                     sender.sendMessage(plugin.getYoChatPrefix().append(Component.text("No channel found with that name!", NamedTextColor.RED)));
                     return;
@@ -273,7 +272,7 @@ public class YoChatCommand implements TabExecutor {
                     ));
                 }
 
-                YoChatAPI.getInstance().getChannelManager().joinChannel(player, channel);
+                YoChatAPI.getPlugin().getChannelManager().joinChannel(player, channel);
                 sender.sendMessage(plugin.getYoChatPrefix().append(
                         Component.text("Joined channel ", plugin.getMainColor())
                                 .append(Component.text("'" + channelName + "'", plugin.getHighlightColor()))));
@@ -335,7 +334,7 @@ public class YoChatCommand implements TabExecutor {
                 sender.sendMessage(plugin.getYoChatPrefix().append(
                         Component.text("Muted player ", plugin.getMainColor())
                                 .append(Component.text("'" + name + "'", plugin.getHighlightColor())
-                                        .append(Component.text(" for the reason ", plugin.getHighlightColor())
+                                        .append(Component.text(" for the reason ", plugin.getMainColor())
                                                 .append(Component.text("'" + reason + "'", plugin.getHighlightColor()))))));
             } else {
                 sender.sendMessage(plugin.getYoChatPrefix().append(
@@ -345,7 +344,7 @@ public class YoChatCommand implements TabExecutor {
 
             if (ConfigManager.getInstance().isWebhookEnabled()) sendMuteWebhook(name, "permanent", reason, sender.getName());
             if (ConfigManager.getInstance().isUseYouGotMutedMessage() && offlinePlayer.isOnline()) {
-                Component formatted = YoChatAPI.getInstance().getChatManager().formatYouGotMutedMessage(ConfigManager.getInstance().getYouGotMutedMessage(), sender.getName(), offlinePlayer, "permanent", reason);
+                Component formatted = YoChatAPI.getPlugin().getChatManager().formatYouGotMutedMessage(ConfigManager.getInstance().getYouGotMutedMessage(), sender.getName(), offlinePlayer, "permanent", reason);
                 if (offlinePlayer.getPlayer() != null) offlinePlayer.getPlayer().sendMessage(formatted);
             }
 
@@ -361,7 +360,7 @@ public class YoChatCommand implements TabExecutor {
                 return;
             }
             if (args.length > 4) reason = String.join(" ", Arrays.copyOfRange(args, 4, args.length));
-            duration = YoChatAPI.getInstance().getChatManager().parseDuration(timeStr);
+            duration = YoChatAPI.getPlugin().getChatManager().parseDuration(timeStr);
 
             MutedPlayer mutedPlayer = new MutedPlayer(uuid, duration, System.currentTimeMillis(), reason, sender.getName());
             YoChatAPI.addMutedPlayer(mutedPlayer);
@@ -384,10 +383,11 @@ public class YoChatCommand implements TabExecutor {
 
             if (ConfigManager.getInstance().isWebhookEnabled()) sendMuteWebhook(name, timeStr, reason, sender.getName());
             if (ConfigManager.getInstance().isUseYouGotMutedMessage() && offlinePlayer.isOnline()) {
-                Component formatted = YoChatAPI.getInstance().getChatManager().formatYouGotMutedMessage(ConfigManager.getInstance().getYouGotMutedMessage(), sender.getName(), offlinePlayer, timeStr, reason);
+                Component formatted = YoChatAPI.getPlugin().getChatManager().formatYouGotMutedMessage(ConfigManager.getInstance().getYouGotMutedMessage(), sender.getName(), offlinePlayer, timeStr, reason);
                 if (offlinePlayer.getPlayer() != null) offlinePlayer.getPlayer().sendMessage(formatted);
             }
         }
+
         MuteManager.getInstance().save();
     }
 
@@ -436,10 +436,9 @@ public class YoChatCommand implements TabExecutor {
 
             if (ConfigManager.getInstance().isWebhookEnabled()) sendUnmuteWebhook(name, reason, sender.getName());
             if (ConfigManager.getInstance().isUseYouGotUnmutedMessage() && offlinePlayer.isOnline()) {
-                Component formatted = YoChatAPI.getInstance().getChatManager().formatYouGotUnmutedMessage(ConfigManager.getInstance().getYouGotUnmutedMessage(), sender.getName(), offlinePlayer, reason);
+                Component formatted = YoChatAPI.getPlugin().getChatManager().formatYouGotUnmutedMessage(ConfigManager.getInstance().getYouGotUnmutedMessage(), sender.getName(), offlinePlayer, reason);
                 if (offlinePlayer.getPlayer() != null) offlinePlayer.getPlayer().sendMessage(formatted);
             }
-            MuteManager.getInstance().save();
 
         } else {
             sender.sendMessage(plugin.getYoChatPrefix().append(
@@ -447,6 +446,8 @@ public class YoChatCommand implements TabExecutor {
                             .append(Component.text("'" + playerName + "'", plugin.getHighlightColor())
                                     .append(Component.text(" is not muted!", NamedTextColor.RED)))));
         }
+
+        MuteManager.getInstance().save();
     }
 
     @Override
@@ -469,10 +470,8 @@ public class YoChatCommand implements TabExecutor {
                         .filter(opt -> opt.startsWith(args[1].toLowerCase()))
                         .toList();
             } else if (args[0].equalsIgnoreCase("unmute")) {
-                return Arrays.stream(Bukkit.getOfflinePlayers())
-                        .map(OfflinePlayer::getName)
-                        .filter(Objects::nonNull)
-                        .filter(opt -> opt.toLowerCase().startsWith(args[1].toLowerCase()))
+                return MuteManager.getMutedPlayerNames().stream()
+                        .filter(s -> s.startsWith(args[1].toLowerCase()))
                         .toList();
             }
         }
@@ -480,7 +479,7 @@ public class YoChatCommand implements TabExecutor {
         if (args.length == 3) {
             if (args[0].equalsIgnoreCase("channels")) {
                 if (args[1].equalsIgnoreCase("delete") || args[1].equalsIgnoreCase("join")) {
-                    return YoChatAPI.getInstance().getChannelManager().getChannels().stream()
+                    return YoChatAPI.getPlugin().getChannelManager().getChannels().stream()
                             .map(ChatChannel::getName)
                             .filter(opt -> opt.toLowerCase().startsWith(args[2].toLowerCase()))
                             .toList();
@@ -531,71 +530,75 @@ public class YoChatCommand implements TabExecutor {
     }
 
     private void sendUnmuteWebhook(String targetname, @Nullable String reason, String senderName) {
-        WebhookPayload.Field targetField = WebhookPayload.Field.builder()
-                .name("Target")
-                .value(targetname)
-                .build();
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            WebhookPayload.Field targetField = WebhookPayload.Field.builder()
+                    .name("Target")
+                    .value(targetname)
+                    .build();
 
-        WebhookPayload.Field reasonField = WebhookPayload.Field.builder()
-                .name("Reason")
-                .value(Objects.requireNonNullElse(reason, "No reason provided"))
-                .build();
+            WebhookPayload.Field reasonField = WebhookPayload.Field.builder()
+                    .name("Reason")
+                    .value(Objects.requireNonNullElse(reason, "No reason provided"))
+                    .build();
 
-        WebhookPayload.Field senderField = WebhookPayload.Field.builder()
-                .name("Pardoner")
-                .value(senderName)
-                .build();
+            WebhookPayload.Field senderField = WebhookPayload.Field.builder()
+                    .name("Pardoner")
+                    .value(senderName)
+                    .build();
 
-        List<WebhookPayload.Field> fieldList = List.of(targetField, reasonField, senderField);
+            List<WebhookPayload.Field> fieldList = List.of(targetField, reasonField, senderField);
 
-        WebhookPayload.Embed embed = WebhookPayload.Embed.builder()
-                .title("Player Unmuted")
-                .color(11119017)
-                .description("A player has been unmuted in-game.")
-                .fields(fieldList)
-                .build();
+            WebhookPayload.Embed embed = WebhookPayload.Embed.builder()
+                    .title("Player Unmuted")
+                    .color(11119017)
+                    .description("A player has been unmuted in-game.")
+                    .fields(fieldList)
+                    .build();
 
-        WebhookPayload payload = WebhookPayload.builder()
-                .embeds(List.of(embed))
-                .build();
+            WebhookPayload payload = WebhookPayload.builder()
+                    .embeds(List.of(embed))
+                    .build();
 
-        Discord.sendMessage(payload, ConfigManager.getInstance().getUnmuteWebhookUrl());
+            plugin.getDiscord().sendMessage(payload, ConfigManager.getInstance().getUnmuteWebhookUrl());
+        });
     }
 
     private void sendMuteWebhook(String targetname, String duration, @Nullable String reason, String sendername) {
-        WebhookPayload.Field targetField = WebhookPayload.Field.builder()
-                .name("Target")
-                .value(targetname)
-                .build();
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            WebhookPayload.Field targetField = WebhookPayload.Field.builder()
+                    .name("Target")
+                    .value(targetname)
+                    .build();
 
-        WebhookPayload.Field durationField = WebhookPayload.Field.builder()
-                .name("Duration")
-                .value(duration)
-                .build();
+            WebhookPayload.Field durationField = WebhookPayload.Field.builder()
+                    .name("Duration")
+                    .value(duration)
+                    .build();
 
-        WebhookPayload.Field reasonField = WebhookPayload.Field.builder()
-                .name("Reason")
-                .value(Objects.requireNonNullElse(reason, "No reason provided"))
-                .build();
+            WebhookPayload.Field reasonField = WebhookPayload.Field.builder()
+                    .name("Reason")
+                    .value(Objects.requireNonNullElse(reason, "No reason provided"))
+                    .build();
 
-        WebhookPayload.Field executorField = WebhookPayload.Field.builder()
-                .name("Punisher")
-                .value(sendername)
-                .build();
+            WebhookPayload.Field executorField = WebhookPayload.Field.builder()
+                    .name("Punisher")
+                    .value(sendername)
+                    .build();
 
-        List<WebhookPayload.Field> fieldList = List.of(targetField, durationField, reasonField, executorField);
+            List<WebhookPayload.Field> fieldList = List.of(targetField, durationField, reasonField, executorField);
 
-        WebhookPayload.Embed embed = WebhookPayload.Embed.builder()
-                .title("Player Muted")
-                .color(15158332)
-                .description("A player has been muted in-game.")
-                .fields(fieldList)
-                .build();
+            WebhookPayload.Embed embed = WebhookPayload.Embed.builder()
+                    .title("Player Muted")
+                    .color(15158332)
+                    .description("A player has been muted in-game.")
+                    .fields(fieldList)
+                    .build();
 
-        WebhookPayload payload = WebhookPayload.builder()
-                .embeds(List.of(embed))
-                .build();
+            WebhookPayload payload = WebhookPayload.builder()
+                    .embeds(List.of(embed))
+                    .build();
 
-        Discord.sendMessage(payload, ConfigManager.getInstance().getMuteWebhookUrl());
+            plugin.getDiscord().sendMessage(payload, ConfigManager.getInstance().getMuteWebhookUrl());
+        });
     }
 }

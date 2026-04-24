@@ -50,7 +50,7 @@ public class ChannelManager {
         String rawText = PlainTextComponentSerializer.plainText().serialize(message);
         String mentionFormat = ConfigManager.getInstance().getMentioningFormat();
 
-        Bukkit.getConsoleSender().sendMessage(YoChatAPI.getInstance().getChatManager().formatChannelMessage(channel, sender, message));
+        Bukkit.getConsoleSender().sendMessage(YoChatAPI.getPlugin().getChatManager().formatChannelMessage(channel, sender, message));
         Set<String> worlds = channel.getWorlds();
 
         for (Player p : Bukkit.getOnlinePlayers()) {
@@ -70,9 +70,9 @@ public class ChannelManager {
 
             String finalContent = rawText;
 
-            if (YoChatAPI.getInstance().getChatManager().containsName(p, rawText)) {
+            if (YoChatAPI.getPlugin().getChatManager().containsName(p, rawText)) {
 
-                String replacement = YoChatAPI.getInstance().getChatManager().formatMention(mentionFormat, p, sender);
+                String replacement = YoChatAPI.getPlugin().getChatManager().formatMention(mentionFormat, p, sender);
                 finalContent = rawText.replaceAll("(?i)" + Pattern.quote(p.getName()), replacement);
 
                 if(ConfigManager.getInstance().isUseSound()) {
@@ -80,7 +80,7 @@ public class ChannelManager {
                 }
             }
 
-            p.sendMessage(YoChatAPI.getInstance().getChatManager().formatChannelMessage(channel, sender, Component.text(finalContent)));
+            p.sendMessage(YoChatAPI.getPlugin().getChatManager().formatChannelMessage(channel, sender, Component.text(finalContent)));
         }
     }
 

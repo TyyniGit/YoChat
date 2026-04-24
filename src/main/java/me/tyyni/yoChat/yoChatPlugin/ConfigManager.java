@@ -149,7 +149,7 @@ public class ConfigManager {
         useYouGotMutedMessage = config.getBoolean("moderation.use-yougotmuted-message", true);
         youGotMutedMessage = config.getString("moderation.yougotmuted-message", "<red>You are muted for the reason <b>'{reason}'</b></red>");
         useYouGotUnmutedMessage = config.getBoolean("moderation.use-yougotunmuted-message", true);
-        youGotUnmutedMessage = config.getString("moderation.use-yougotunmuted-message", "<green>You got unmuted by <b>'{pardoner}'</b></green>");
+        youGotUnmutedMessage = config.getString("moderation.yougotunmuted-message", "<green>You got unmuted by <b>'{pardoner}'</b></green>");
         useTimeEndedMessage = config.getBoolean("moderation.use-timeended-message", true);
         timeEndedMessage = config.getString("moderation.timeended-message", "<green>Your mute is over!</green>");
         muteCheckerInterval = config.getString("moderation.mute-checker-interval", "10s");
@@ -170,7 +170,7 @@ public class ConfigManager {
         ConfigurationSection channelSpecificFormats = config.getConfigurationSection("channel-specific-formatting.formats");
         if(channelSpecificFormats != null) {
             for(String key : channelSpecificFormats.getKeys(false)) {
-                ChatChannel channel = YoChatAPI.getInstance().getChannelManager().getChannel(key);
+                ChatChannel channel = YoChatAPI.getPlugin().getChannelManager().getChannel(key);
                 String format = channelSpecificFormats.getString("format", null);
                 if(channel != null) {
                     channel.setFormat(format);
@@ -188,7 +188,7 @@ public class ConfigManager {
             prefix = plugin.getAlternativePrefix();
         }
 
-        Component prefixComponent = YoChatAPI.getInstance().getMessageParseManager().parseAdmin(prefix);
+        Component prefixComponent = YoChatAPI.getPlugin().getMessageParseManager().parseAdmin(prefix);
         plugin.setYoChatPrefix(prefixComponent);
 
         if (debug) {

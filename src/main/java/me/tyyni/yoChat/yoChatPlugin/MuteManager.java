@@ -54,6 +54,12 @@ public class MuteManager {
         return mutedPlayers.containsKey(uuid);
     }
 
+    public static List<String> getMutedPlayerNames() {
+        return mutedPlayers.values().stream()
+                .map(s -> Bukkit.getOfflinePlayer(s.getUuid()).getName())
+                .toList();
+    }
+
     public void load() {
         mutedPlayers.clear();
 
@@ -104,7 +110,7 @@ public class MuteManager {
 
                         Player onlinePlayer = Bukkit.getPlayer(mp.getUuid());
                         if (onlinePlayer != null) {
-                            onlinePlayer.sendMessage(YoChatAPI.getInstance().getChatManager().formatTimeEndedMessage(ConfigManager.getInstance().getTimeEndedMessage(), onlinePlayer));
+                            onlinePlayer.sendMessage(YoChatAPI.getPlugin().getChatManager().formatTimeEndedMessage(ConfigManager.getInstance().getTimeEndedMessage(), onlinePlayer));
                         }
                     });
                 }
@@ -117,7 +123,7 @@ public class MuteManager {
     long interval;
 
     public void startMuteChecker() {
-        long millis = YoChatAPI.getInstance().getChatManager().parseDuration(ConfigManager.getInstance().getMuteCheckerInterval());
+        long millis = YoChatAPI.getPlugin().getChatManager().parseDuration(ConfigManager.getInstance().getMuteCheckerInterval());
         setInterval((millis / 1000L) * 20L);
 
         Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, this::checkMutes, 0L, getInterval());
