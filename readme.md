@@ -25,6 +25,7 @@
 ---
 
 ## Commands & Permissions
+You can find all the permissions in LuckPerms. Here is only a portion of the permissions.
 
 | Command                                                     | Description                     | Permission                 |
 |:------------------------------------------------------------|:--------------------------------|:---------------------------|
@@ -32,13 +33,13 @@
 | `/yochat reload`                                            | Reloads the configuration file. | `yochat.commands.reload`   |
 | `/yochat mute <perm/temp> <player> <time if temp> [reason]` | Mutes a player.                 | `yochat.commands.mute`     |
 | `/yochat unmute <player> [reason]`                          | Unmutes a player.               | `yochat.commands.unmute`   |
-| `/yochat channels list`                                     | Channel management commands.    | `yochat.commands.channels` |
+| `/yochat channels`                                          | Channel management commands.    | `yochat.commands.channels` |
 
 ---
 
-## Configuration Preview
+## Configuration
 
-YoChat uses a highly customizable `config.yml`. You can customize **basically** everything from there. Always remember to use `/yochat reload` after changing the config, otherwise the changes won't take effect.
+YoChat uses a highly customizable `config.yml`. You can customize basically everything from there. Always remember to use `/yochat reload` after changing the config, otherwise the changes won't take effect.
 
 ---
 

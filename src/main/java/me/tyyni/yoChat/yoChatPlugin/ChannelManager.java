@@ -3,7 +3,6 @@ package me.tyyni.yoChat.yoChatPlugin;
 import me.tyyni.yoChat.yoChatPlugin.objects.ChatChannel;
 import me.tyyni.yoChat.yoChatAPI.YoChatAPI;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -15,7 +14,6 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
 
 public class ChannelManager {
     private final Map<String, ChatChannel> channels = new ConcurrentHashMap<>();
@@ -25,7 +23,7 @@ public class ChannelManager {
 
     public ChannelManager(YoChat plugin) {
         this.plugin = plugin;
-        ChatChannel channel = createChannel("global", null, -1, false, null);
+        ChatChannel channel = createChannel("global", -1, false, null);
         register(channel);
 
         file = new File(plugin.getDataFolder(), "channels.yml");
@@ -47,9 +45,6 @@ public class ChannelManager {
     }
 
     public void sendToChannel(ChatChannel channel, Player sender, Component message) {
-        String rawText = PlainTextComponentSerializer.plainText().serialize(message);
-        String mentionFormat = ConfigManager.getInstance().getMentioningFormat();
-
         Bukkit.getConsoleSender().sendMessage(YoChatAPI.getPlugin().getChatManager().formatChannelMessage(channel, sender, message));
         Set<String> worlds = channel.getWorlds();
 
@@ -68,24 +63,13 @@ public class ChannelManager {
                 if(!worlds.contains(p.getWorld().getName())) continue;
             }
 
-            String finalContent = rawText;
-
-            if (YoChatAPI.getPlugin().getChatManager().containsName(p, rawText)) {
-
-                String replacement = YoChatAPI.getPlugin().getChatManager().formatMention(mentionFormat, p, sender);
-                finalContent = rawText.replaceAll("(?i)" + Pattern.quote(p.getName()), replacement);
-
-                if(ConfigManager.getInstance().isUseSound()) {
-                    p.playSound(p.getLocation(), ConfigManager.getInstance().getSound(), ConfigManager.getInstance().getSoundVolume(), ConfigManager.getInstance().getSoundPitch());
-                }
-            }
-
-            p.sendMessage(YoChatAPI.getPlugin().getChatManager().formatChannelMessage(channel, sender, Component.text(finalContent)));
+            Component viewerMessage = YoChatAPI.getPlugin().getChatManager().applyMentionFormatting(sender, p, message);
+            p.sendMessage(YoChatAPI.getPlugin().getChatManager().formatChannelMessage(channel, sender, viewerMessage));
         }
     }
 
-    public ChatChannel createChannel(String channelName, String permission, int radius, boolean strictWorld, @Nullable Set<String> worlds) {
-        return new ChatChannel(channelName, permission, radius, strictWorld, worlds);
+    public ChatChannel createChannel(String channelName, int radius, boolean strictWorld, @Nullable Set<String> worlds) {
+        return new ChatChannel(channelName, radius, strictWorld, worlds);
     }
     public void deleteChannel(String channelName) {
         channels.remove(channelName.toLowerCase(Locale.ROOT));
@@ -112,6 +96,7 @@ public class ChannelManager {
 
             section.set(key + ".permission", channel.getPermission());
             section.set(key + ".radius", channel.getRadius());
+            section.set(key + ".strict-world", channel.isStrictWorld());
             section.set(key + ".worlds", channel.getWorlds());
         }
 
@@ -128,7 +113,7 @@ public class ChannelManager {
     public void loadChannels() {
         channels.clear();
 
-        register(createChannel("global", null, -1, false, null));
+        register(createChannel("global", -1, false, null));
 
         ConfigurationSection section = config.getConfigurationSection("channels");
         if (section == null) return;
@@ -141,7 +126,8 @@ public class ChannelManager {
             List<String> worldsList = section.getStringList(key + ".worlds");
             Set<String> worlds = new HashSet<>(worldsList);
 
-            ChatChannel channel = createChannel(key, permission, radius, strictWorld, worlds);
+            ChatChannel channel = createChannel(key, radius, strictWorld, worlds);
+            channel.setPermission(permission);
             register(channel);
         }
     }

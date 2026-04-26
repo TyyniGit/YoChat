@@ -127,16 +127,16 @@ public class ConfigManager {
         useChannelSystem = config.getBoolean("general.use-channel-system", true);
         defaultChannel = channelManager.getChannel(config.getString("general.default-channel", "global"));
 
-        useLuckPerms = config.getBoolean("Addidional.useLuckPerms", true);
-        useVault = config.getBoolean("Addidional.useVault", false);
-        usePlaceholderAPI = config.getBoolean("Addidional.usePlaceholderAPI", true);
+        useLuckPerms = config.getBoolean("addidional.useLuckPerms", true);
+        useVault = config.getBoolean("addidional.useVault", false);
+        usePlaceholderAPI = config.getBoolean("addidional.usePlaceholderAPI", true);
 
         chatFormat = config.getString("formatting.chat-format", "{player}: {message}");
         channelFormat = config.getString("formatting.channel-format", "{player}: {message}");
 
         isModerationEnabled = config.getBoolean("moderation.enabled", true);
         blockedwords = config.getStringList("moderation.blocked-words");
-        blockedWordMessage = config.getString("moderation.bad-word-message", "<red>Please speak respectfully on this server!</red>");
+        blockedWordMessage = config.getString("moderation.blocked-word-message", "<red>Please speak respectfully on this server!</red>");
 
         sendResponseCode = config.getBoolean("moderation.discord-webhook.webhook-send-response-code", true);
         sendResponseBody = config.getBoolean("moderation.discord-webhook.webhook-send-response-body", true);
@@ -154,7 +154,7 @@ public class ConfigManager {
         timeEndedMessage = config.getString("moderation.timeended-message", "<green>Your mute is over!</green>");
         muteCheckerInterval = config.getString("moderation.mute-checker-interval", "10s");
 
-        useChannelSpecificFormatting = config.getBoolean("channel-specific-formatting.enabled", false);
+        useChannelSpecificFormatting = config.getBoolean("formatting.channel-specific-formatting.enabled", false);
 
         useMentioning = config.getBoolean("mentioning.enabled", true);
         mentioningFormat = config.getString("mentioning.format", "<blue>@{name}</blue>");
@@ -167,11 +167,11 @@ public class ConfigManager {
         soundPitch = (float) config.getDouble("mentioning.pitch", 1.0);
 
         minimessageStrictMode = config.getBoolean("minimessage-customization.strict-mode", false);
-        ConfigurationSection channelSpecificFormats = config.getConfigurationSection("channel-specific-formatting.formats");
+        ConfigurationSection channelSpecificFormats = config.getConfigurationSection("formatting.channel-specific-formatting.formats");
         if(channelSpecificFormats != null) {
             for(String key : channelSpecificFormats.getKeys(false)) {
                 ChatChannel channel = YoChatAPI.getPlugin().getChannelManager().getChannel(key);
-                String format = channelSpecificFormats.getString("format", null);
+                String format = channelSpecificFormats.getString(key + ".format", null);
                 if(channel != null) {
                     channel.setFormat(format);
                 }

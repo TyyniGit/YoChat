@@ -55,15 +55,14 @@ public class YoChatAPI {
      * Creates a new {@link ChatChannel} instance using YoChat's channel manager.
      *
      * @param channelName the channel name
-     * @param permission the permission required to join the channel, or {@code null} for public access
      * @param radius the channel radius in blocks, or a non-positive value for unrestricted range
      * @param strictWorld whether the sender must also be inside an allowed world
      * @param worlds the allowed world names, or {@code null} for no world restriction
      * @return the created channel instance
      */
-    public static ChatChannel createChannel(String channelName, @Nullable String permission, int radius, boolean strictWorld, @Nullable java.util.Set<String> worlds) {
+    public static ChatChannel createChannel(String channelName, int radius, boolean strictWorld, @Nullable java.util.Set<String> worlds) {
         checkProvider();
-        return provider.getChannelManager().createChannel(channelName, permission, radius, strictWorld, worlds);
+        return provider.getChannelManager().createChannel(channelName, radius, strictWorld, worlds);
     }
 
     /**

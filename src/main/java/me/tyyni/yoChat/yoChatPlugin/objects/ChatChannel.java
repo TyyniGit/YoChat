@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents a chat channel with specific settings such as range,
@@ -36,7 +37,7 @@ public class ChatChannel {
 
     /** A set of players currently residing in this channel. */
     @Getter
-    private Set<Player> members = new HashSet<>();
+    private final Set<Player> members = ConcurrentHashMap.newKeySet();
 
     /** Whether both the message sender and the receiver have to be in some of the worlds defined in the worlds Set. */
     @Getter
@@ -59,14 +60,12 @@ public class ChatChannel {
      * Constructs a new ChatChannel.
      *
      * @param name        The name of the channel.
-     * @param permission  The required permission (can be null).
      * @param radius      The chat broadcast radius.
      * @param strictWorld Whether world restriction is active.
      * @param worlds      The allowed worlds (can be null).
      */
-    public ChatChannel(String name, @Nullable String permission, int radius, boolean strictWorld, @Nullable Set<String> worlds) {
+    public ChatChannel(String name, int radius, boolean strictWorld, @Nullable Set<String> worlds) {
         this.name = name;
-        this.permission = permission;
         this.radius = radius;
         this.strictWorld = strictWorld;
         this.worlds = worlds;
@@ -108,5 +107,42 @@ public class ChatChannel {
      */
     public boolean isMember(Player player) {
         return members.contains(player);
+    }
+
+    /**
+     * Adds a world to the channel's world list.
+     * @param worldName - The world to add.
+     */
+    public void addWorld(String worldName) {
+        if (worlds != null) {
+            worlds.add(worldName);
+        } else {
+            worlds = new HashSet<>();
+            worlds.add(worldName);
+        }
+    }
+    /**
+     * Removes a world from the channel's world list.
+     *
+     * @param worldName The world to remove.
+     */
+    public void removeWorld(String worldName) {
+        if (worlds != null) {
+            worlds.remove(worldName);
+
+            if(worlds.isEmpty()) worlds = null;
+        }
+    }
+    /**
+     * Checks if the worlds list contains a world.
+     *
+     * @param worldName The world to check.
+     * @return true if the list contains the world.
+     */
+    public boolean hasWorld(String worldName) {
+        if (worlds != null) {
+            return worlds.contains(worldName);
+        }
+        return false;
     }
 }

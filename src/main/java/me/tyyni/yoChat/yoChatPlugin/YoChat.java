@@ -6,6 +6,7 @@ import lombok.Setter;
 import me.tyyni.yoChat.yoChatPlugin.commands.YoChatCommand;
 import me.tyyni.yoChat.yoChatPlugin.listeners.ChatListener;
 import me.tyyni.yoChat.yoChatPlugin.listeners.PlayerJoinListener;
+import me.tyyni.yoChat.yoChatPlugin.listeners.PlayerQuitListener;
 import me.tyyni.yoChat.yoChatPlugin.objects.ChatChannel;
 import me.tyyni.yoChat.yoChatAPI.YoChatAPI;
 import me.tyyni.yoChat.yoChatAPI.interfaces.YoChatProvider;
@@ -106,6 +107,7 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
     private void registerEvents() {
         getServer().getPluginManager().registerEvents(new ChatListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(), this);
+        getServer().getPluginManager().registerEvents(new PlayerQuitListener(), this);
     }
 
     private void registerCommands() {

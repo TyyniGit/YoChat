@@ -17,7 +17,7 @@ public class MessageParseManager {
     public void setupMM() {
         this.mm = MiniMessage.builder()
                 .tags(TagResolver.empty())
-                .strict(ConfigManager.getInstance().isMinimessageStrictMode())
+                .strict(ConfigManager.getInstance().getConfig().getBoolean("minimessage-customization.strict-mode", false))
                 .build();
     }
 

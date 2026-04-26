@@ -102,7 +102,7 @@ public class ChatManager {
             }
         }
 
-        if (config.isUsePlaceholderAPI() && Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+        if (player != null && config.isUsePlaceholderAPI() && Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             finalLine = PlaceholderAPI.setPlaceholders(player, finalLine);
         }
 
@@ -114,20 +114,12 @@ public class ChatManager {
     }
 
     public Component formatMessage(Player sender, Component message) {
-        String rawText = PlainTextComponentSerializer.plainText().serialize(message);
-
-        Component parsedUserMessage = mpm.parse(sender, rawText);
-
         String formatted = processFormat(config.getChatFormat(), sender, Map.of("{message}", "<msg>"));
 
-        return mpm.parseAdmin(formatted, Placeholder.component("msg", parsedUserMessage));
+        return mpm.parseAdmin(formatted, Placeholder.component("msg", message));
     }
 
     public Component formatChannelMessage(ChatChannel channel, Player sender, Component message) {
-        String rawText = PlainTextComponentSerializer.plainText().serialize(message);
-
-        Component parsedUserMessage = mpm.parse(sender, rawText);
-
         String format = (channel.getFormat() != null && !channel.getFormat().isEmpty()) ? channel.getFormat() : config.getChannelFormat();
 
         Map<String, String> placeholders = Map.of(
@@ -137,7 +129,7 @@ public class ChatManager {
 
         String processedFormat = processFormat(format, sender, placeholders);
 
-        return mpm.parseAdmin(processedFormat, Placeholder.component("msg", parsedUserMessage));
+        return mpm.parseAdmin(processedFormat, Placeholder.component("msg", message));
     }
 
     public Component formatMessage(String format, Player sender, String blockedword) {
@@ -207,26 +199,29 @@ public class ChatManager {
     }
 
     public void broadcast(Component message, Player sender) {
-        String rawText = PlainTextComponentSerializer.plainText().serialize(message);
-        String mentionFormat = ConfigManager.getInstance().getMentioningFormat();
-
         for (Player player : Bukkit.getOnlinePlayers()) {
-
-            String finalContent = rawText;
-
-            if (containsName(player, rawText)) {
-                String replacement = formatMention(mentionFormat, player, sender);
-                finalContent = rawText.replaceAll("(?i)" + Pattern.quote(player.getName()), replacement);
-
-                if(ConfigManager.getInstance().isUseSound()) {
-                    player.playSound(player.getLocation(), ConfigManager.getInstance().getSound(), ConfigManager.getInstance().getSoundVolume(), ConfigManager.getInstance().getSoundPitch());
-                }
-            }
-
-            player.sendMessage(formatMessage(sender, Component.text(finalContent)));
+            player.sendMessage(formatMessage(sender, applyMentionFormatting(sender, player, message)));
         }
 
         Bukkit.getConsoleSender().sendMessage(formatMessage(sender, message));
+    }
+
+    public Component applyMentionFormatting(Player sender, @Nullable Player viewer, Component message) {
+        String rawText = PlainTextComponentSerializer.plainText().serialize(message);
+        String finalContent = rawText;
+
+        if (viewer != null && config.isUseMentioning() && containsName(viewer, rawText)) {
+            if (config.isUseSound()) {
+                Bukkit.getScheduler().runTask(plugin, () ->
+                        viewer.playSound(viewer.getLocation(), config.getSound(), config.getSoundVolume(), config.getSoundPitch())
+                );
+            }
+
+            String replacement = formatMention(config.getMentioningFormat(), viewer, sender);
+            finalContent = rawText.replaceAll("(?i)" + Pattern.quote(viewer.getName()), replacement);
+        }
+
+        return mpm.parse(sender, finalContent);
     }
 
     private String getLuckPermsPrefix(Player player) {
@@ -308,4 +303,5 @@ public class ChatManager {
     public boolean containsName(Player player, String text) {
         return text.toLowerCase(Locale.ROOT).contains(player.getName().toLowerCase(Locale.ROOT));
     }
+
 }

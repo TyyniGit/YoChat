@@ -8,7 +8,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SuffixManager {
-
     /**
      * Right now this class is not in use!
      **/

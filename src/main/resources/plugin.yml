@@ -36,7 +36,13 @@ permissions:
                  yochat.commands.channels.list:
                    description: Permission for seeing a list of chat channels.
                  yochat.commands.channels.join:
-                   description: Permission for joining chat channels
+                   description: Permission for joining chat channels.
+                 yochat.commands.channels.edit:
+                   description: Permission for editing chat channels.
+                 yochat.commands.channels.leave:
+                   description: Permission for leaving chat channels.
+                 yochat.commands.channels.members:
+                   description: Permission for chat channels member handling.
 
               yochat.commands.help:
                 description: Permission for the help command.

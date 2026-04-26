@@ -9,6 +9,7 @@ import me.tyyni.yoChat.yoChatPlugin.webhook.WebhookPayload;
 import me.tyyni.yoChat.yoChatAPI.YoChatAPI;
 import me.tyyni.yoChat.yoChatPlugin.objects.ChatChannel;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
@@ -24,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class YoChatCommand implements TabExecutor {
@@ -163,24 +165,23 @@ public class YoChatCommand implements TabExecutor {
                     sendNoPermissionMessage(sender);
                     return;
                 }
-                if (args.length < 6) {
+                if (args.length < 5) {
                     sender.sendMessage(plugin.getYoChatPrefix().append(
-                            Component.text("Usage: /yochat channels create <name> <permission> <radius> [worlds]", NamedTextColor.RED)));
+                            Component.text("Usage: /yochat channels create <name> <radius> <strict> [worlds]", NamedTextColor.RED)));
                     return;
                 }
 
                 String channelName = args[2];
-                String permission = args[3];
                 int radius;
                 try {
-                    radius = Integer.parseInt(args[4]);
+                    radius = Integer.parseInt(args[3]);
                 } catch (NumberFormatException e) {
                     sender.sendMessage(plugin.getYoChatPrefix().append(
                             Component.text("Radius must be a number!", NamedTextColor.RED)));
                     return;
                 }
 
-                String strict = args[5];
+                String strict = args[4];
                 boolean strictWorld;
                 if (strict.equalsIgnoreCase("true")) {
                     strictWorld = true;
@@ -197,8 +198,8 @@ public class YoChatCommand implements TabExecutor {
                 }
 
                 Set<String> worlds = new HashSet<>();
-                if (args.length > 6) {
-                    String worldString = String.join(" ", Arrays.copyOfRange(args, 6, args.length));
+                if (args.length > 5) {
+                    String worldString = String.join(" ", Arrays.copyOfRange(args, 5, args.length));
                     for (String world : worldString.split(",")) {
                         World isWorld = Bukkit.getWorld(world);
                         if (isWorld == null) {
@@ -214,16 +215,46 @@ public class YoChatCommand implements TabExecutor {
 
                 if (worlds.isEmpty()) worlds = null;
 
-                ChatChannel channel = YoChatAPI.getPlugin().getChannelManager().createChannel(channelName, permission, radius, strictWorld, worlds);
+                ChatChannel channel = YoChatAPI.getPlugin().getChannelManager().createChannel(channelName, radius, strictWorld, worlds);
                 if (channel != null) {
                     YoChatAPI.registerChannel(channel);
-                    sender.sendMessage(plugin.getYoChatPrefix().append(
+
+                    List<Component> worldComponents = worlds != null ? worlds.stream()
+                                                                       .map(name -> Component.text(name, plugin.getHighlightColor()))
+                                                                       .collect(Collectors.toList()) : null;
+
+                    Component joinedWorlds = null;
+                    if (worldComponents != null) {
+                        joinedWorlds = Component.join(
+                                JoinConfiguration.separator(Component.text(", ", plugin.getMainColor())),
+                                worldComponents
+                        );
+                    }
+
+                    Component message = plugin.getYoChatPrefix().append(
                             Component.text("Channel ", plugin.getMainColor())
                                     .append(Component.text("'" + channelName + "'", plugin.getHighlightColor())
-                                            .append(Component.text(" created with permission ", plugin.getMainColor())
-                                                    .append(Component.text("'" + permission + "'", plugin.getHighlightColor())
-                                                            .append(Component.text(" and radius ", plugin.getMainColor())
-                                                                    .append(Component.text("'" + radius + "'!", plugin.getHighlightColor()))))))));
+                                            .append(Component.text(" created: ", plugin.getMainColor())
+                                                            .appendNewline()
+                                                            .append(Component.text("Name: ", plugin.getMainColor())
+                                                                    .append(Component.text(channelName, plugin.getHighlightColor())))
+
+                                                            .appendNewline()
+                                                            .append(Component.text("Radius: ", plugin.getMainColor())
+                                                                    .append(Component.text(radius, plugin.getHighlightColor())))
+
+                                                            .appendNewline()
+                                                            .append(Component.text("Strict: ", plugin.getMainColor())
+                                                                    .append(Component.text(strictWorld, plugin.getHighlightColor()))))));
+                    if(joinedWorlds != null) {
+                        message = message.appendNewline()
+                                .append(Component.text("Worlds: ", plugin.getMainColor())
+                                .append(joinedWorlds));
+                    }
+
+                    sender.sendMessage(message);
+
+                    sender.sendMessage(Component.text("Tweak settings and add a permission by using /yochat channels edit <channel>", plugin.getMainColor()));
                 }
             }
             case "delete" -> {
@@ -270,12 +301,324 @@ public class YoChatCommand implements TabExecutor {
                     sender.sendMessage(plugin.getYoChatPrefix().append(
                             Component.text("You are already in this channel!", NamedTextColor.RED)
                     ));
+                    return;
                 }
 
                 YoChatAPI.getPlugin().getChannelManager().joinChannel(player, channel);
                 sender.sendMessage(plugin.getYoChatPrefix().append(
                         Component.text("Joined channel ", plugin.getMainColor())
                                 .append(Component.text("'" + channelName + "'", plugin.getHighlightColor()))));
+            } case "edit" -> {
+                if (!sender.hasPermission("yochat.commands.channels.edit")) {
+                    sendNoPermissionMessage(sender);
+                    return;
+                }
+
+                if (args.length < 5) {
+                    sender.sendMessage(plugin.getYoChatPrefix().append(Component.text("Usage: /yochat channels edit <channel> <type> <value>", NamedTextColor.RED)));
+                    return;
+                }
+
+                String channelName = args[2];
+                ChatChannel channel = YoChatAPI.getPlugin().getChannelManager().getChannel(channelName);
+                if (channel == null) {
+                    sender.sendMessage(plugin.getYoChatPrefix().append(Component.text("No channel found with that name!", NamedTextColor.RED)));
+                    return;
+                }
+
+                String editType = args[3];
+                switch (editType) {
+                    case "permission" -> {
+                        String edit = args[4];
+                        if(edit.equalsIgnoreCase("-")) {
+                            channel.setPermission(null);
+
+                            sender.sendMessage(plugin.getYoChatPrefix().append(
+                                    Component.text("Permission removed", plugin.getMainColor())));
+                            return;
+                        }
+
+                        channel.setPermission(edit);
+
+                        sender.sendMessage(plugin.getYoChatPrefix().append(
+                                Component.text("Permission set to ", plugin.getMainColor())
+                                        .append(Component.text("'"+ edit + "'", plugin.getHighlightColor()))
+                        ));
+                    } case "name" -> {
+                        String edit = args[4];
+                        channel.setName(edit);
+
+                        sender.sendMessage(plugin.getYoChatPrefix().append(
+                                Component.text("Name changed to ", plugin.getMainColor())
+                                        .append(Component.text("'"+ edit + "'", plugin.getHighlightColor()))
+                        ));
+                    } case "strict" -> {
+                        String strict = args[4];
+                        boolean strictWorld;
+                        if (strict.equalsIgnoreCase("true")) {
+                            strictWorld = true;
+                        } else if (strict.equalsIgnoreCase("false")) {
+                            strictWorld = false;
+                        } else {
+                            sender.sendMessage(plugin.getYoChatPrefix().append(
+                                    Component.text("Incorrect boolean usage!", NamedTextColor.RED)
+                                            .append(Component.text("Use "))
+                                            .append(Component.text("true", plugin.getHighlightColor())
+                                                    .append(Component.text(" or ", NamedTextColor.RED)
+                                                            .append(Component.text("false", plugin.getHighlightColor())
+                                                            )
+                                                    )
+                                            )
+                                    )
+                            );
+                            return;
+                        }
+
+                        channel.setStrictWorld(strictWorld);
+
+                        sender.sendMessage(plugin.getYoChatPrefix().append(
+                                Component.text("Strict world set to ", plugin.getMainColor())
+                                        .append(Component.text("'"+ strict + "'", plugin.getHighlightColor()))
+                        ));
+                    } case "radius" -> {
+                        String radiusString = args[4];
+                        int radius;
+                        try {
+                            radius = Integer.parseInt(radiusString);
+                        } catch (NumberFormatException e) {
+                            sender.sendMessage(plugin.getYoChatPrefix().append(
+                                    Component.text("Radius has to be a number!", NamedTextColor.RED)
+                            ));
+                            return;
+                        }
+
+                        channel.setRadius(radius);
+
+                        sender.sendMessage(plugin.getYoChatPrefix().append(
+                                Component.text("Radius set to ", plugin.getMainColor())
+                                        .append(Component.text("'"+ radius + "'", plugin.getHighlightColor()))
+                        ));
+                    } case "worlds" -> {
+                        String operation = args[4];
+                        switch (operation) {
+                            case "add" -> {
+                                 if (args.length < 6) {
+                                     sender.sendMessage(plugin.getYoChatPrefix().append(
+                                             Component.text("Usage: /yochat channels edit <channel> worlds add <world>", NamedTextColor.RED)
+                                     ));
+                                     return;
+                                 }
+                                 String worldName = args[5];
+                                 if(Bukkit.getWorld(worldName) == null) {
+                                     sender.sendMessage(plugin.getYoChatPrefix().append(
+                                             Component.text("World ", NamedTextColor.RED))
+                                                     .append(Component.text("'"+ worldName +"'", plugin.getHighlightColor())
+                                                             .append(Component.text(" doesn't exist! ", NamedTextColor.RED)
+                                     )));
+
+                                     return;
+                                 }
+
+                                 channel.addWorld(worldName);
+
+                                 sender.sendMessage(plugin.getYoChatPrefix().append(
+                                         Component.text("Added world ", plugin.getMainColor())
+                                                 .append(Component.text("'"+ worldName +"'", plugin.getHighlightColor())
+                                 )));
+                            } case "remove" -> {
+                                if (args.length < 6) {
+                                    sender.sendMessage(plugin.getYoChatPrefix().append(
+                                            Component.text("Usage: /yochat channels edit <channel> worlds remove <world>", NamedTextColor.RED)
+                                    ));
+                                    return;
+                                }
+                                String worldName = args[5];
+
+                                if(!channel.hasWorld(worldName)) {
+                                    sender.sendMessage(plugin.getYoChatPrefix().append(
+                                            Component.text("This channel doesn't contain the world ", plugin.getMainColor())
+                                                    .append(Component.text("'"+ worldName +"'", plugin.getHighlightColor()))
+
+                                    ));
+
+                                    return;
+                                }
+
+                                channel.removeWorld(worldName);
+
+                                sender.sendMessage(plugin.getYoChatPrefix().append(
+                                        Component.text("Removed world ", plugin.getMainColor())
+                                                .append(Component.text("'"+ worldName +"'", plugin.getHighlightColor()))
+                                ));
+                            } case "list" -> {
+                                Set<String> worlds = channel.getWorlds();
+
+                                List<Component> worldComponents = worlds != null ? worlds.stream()
+                                                                                   .map(name -> Component.text(name, plugin.getHighlightColor()))
+                                                                                   .collect(Collectors.toList()) : null;
+                                Component joinedWorlds;
+                                if (worldComponents != null) {
+                                    joinedWorlds = Component.join(
+                                            JoinConfiguration.separator(Component.text(", ", plugin.getMainColor())),
+                                            worldComponents
+                                    );
+                                } else {
+                                    sender.sendMessage(plugin.getYoChatPrefix().append(
+                                            Component.text("No worlds in this channel", NamedTextColor.RED)
+                                    ));
+
+                                    return;
+                                }
+
+                                sender.sendMessage(plugin.getYoChatPrefix().append(
+                                        Component.text("List of worlds in this channel: ", plugin.getMainColor())
+                                                .append(joinedWorlds)
+                                ));
+                            } default -> sender.sendMessage(plugin.getYoChatPrefix().append(
+                                    Component.text("Invalid operation!", NamedTextColor.RED)
+                            ));
+                        }
+                    }
+                    default -> sender.sendMessage(plugin.getYoChatPrefix().append(
+                            Component.text("Invalid type of edit!", NamedTextColor.RED)
+                    ));
+                }
+            } case "leave" -> {
+                if (!sender.hasPermission("yochat.commands.channels.leave")) {
+                    sendNoPermissionMessage(sender);
+                    return;
+                }
+
+                if (args.length < 3) {
+                    sender.sendMessage(plugin.getYoChatPrefix().append(Component.text("Usage: /yochat channels leave <channel>", NamedTextColor.RED)));
+                    return;
+                }
+
+                if (!(sender instanceof Player player)) {
+                    sender.sendMessage(plugin.getYoChatPrefix().append(Component.text("Only players can use this command!", NamedTextColor.RED)));
+                    return;
+                }
+
+                String channelName = args[2];
+                ChatChannel channel = YoChatAPI.getPlugin().getChannelManager().getChannel(channelName);
+                if (channel == null) {
+                    sender.sendMessage(plugin.getYoChatPrefix().append(Component.text("No channel found with that name!", NamedTextColor.RED)));
+                    return;
+                }
+
+                if(!channel.isMember(player)) {
+                    sender.sendMessage(plugin.getYoChatPrefix().append(
+                            Component.text("You don't belong to this channel!", NamedTextColor.RED)
+                    ));
+                    return;
+                }
+
+                channel.removeMember(player);
+
+                sender.sendMessage(plugin.getYoChatPrefix().append(
+                        Component.text("Left from channel ", plugin.getMainColor())
+                                .append(Component.text("'"+ channelName + "'", plugin.getHighlightColor()))
+                ));
+            } case "members" -> {
+                if (!sender.hasPermission("yochat.commands.channels.members")) {
+                    sendNoPermissionMessage(sender);
+                    return;
+                }
+
+                if(args.length < 4) {
+                    sender.sendMessage(plugin.getYoChatPrefix().append(
+                            Component.text("Usage: /yochat channels members <channel> <list|add|remove> <player if add|remove>", NamedTextColor.RED)
+                    ));
+
+                    return;
+                }
+
+                String channelName = args[2];
+                ChatChannel channel = YoChatAPI.getPlugin().getChannelManager().getChannel(channelName);
+                if (channel == null) {
+                    sender.sendMessage(plugin.getYoChatPrefix().append(Component.text("No channel found with that name!", NamedTextColor.RED)));
+                    return;
+                }
+
+                String operation = args[3];
+                switch (operation) {
+                    case "add" -> {
+                        if(args.length < 5) {
+                            sender.sendMessage(plugin.getYoChatPrefix().append(
+                                    Component.text("Usage: /yochat channels members <channel> add <player>!", NamedTextColor.RED)
+                            ));
+
+                            return;
+                        }
+
+                        String membername = args[4];
+                        Player player = Bukkit.getPlayer(membername);
+                        if(player == null) {
+                            sender.sendMessage(plugin.getYoChatPrefix().append(
+                                    Component.text("Player not found!", NamedTextColor.RED)
+                            ));
+
+                            return;
+                        }
+
+                        channel.addMember(player);
+
+                        sender.sendMessage(plugin.getYoChatPrefix().append(
+                                Component.text("Added member ", plugin.getMainColor())
+                                        .append(Component.text("'" + membername + "'", plugin.getHighlightColor()))
+                        ));
+                    } case "remove" -> {
+                        if(args.length < 5) {
+                            sender.sendMessage(plugin.getYoChatPrefix().append(
+                                    Component.text("Usage: /yochat channels members <channel> remove <player>!", NamedTextColor.RED)
+                            ));
+
+                            return;
+                        }
+
+                        String membername = args[4];
+                        Player player = Bukkit.getPlayer(membername);
+                        if(player == null) {
+                            sender.sendMessage(plugin.getYoChatPrefix().append(
+                                    Component.text("Player not found!", NamedTextColor.RED)
+                            ));
+
+                            return;
+                        }
+
+                        channel.removeMember(player);
+
+                        sender.sendMessage(plugin.getYoChatPrefix().append(
+                                Component.text("Removed member ", plugin.getMainColor())
+                                        .append(Component.text("'" + membername + "'", plugin.getHighlightColor()))
+                        ));
+                    } case "list" -> {
+                        List<Component> membersList = channel.getMembers().stream()
+                                        .map(p -> Component.text(p.getName(), plugin.getHighlightColor()))
+                                        .collect(Collectors.toList());
+
+                        Component members;
+                        if(!membersList.isEmpty()) {
+                            members = Component.join(
+                                    JoinConfiguration.separator(Component.text(", ", plugin.getMainColor())),
+                                    membersList
+                            );
+                        } else {
+                            sender.sendMessage(plugin.getYoChatPrefix().append(
+                                    Component.text("No members in this channel", NamedTextColor.RED)
+                            ));
+
+                            return;
+                        }
+
+                        sender.sendMessage(plugin.getYoChatPrefix().append(
+                                Component.text("Channel's members: ", plugin.getMainColor())
+                                        .append(members)
+                        ));
+                    } default -> sender.sendMessage(plugin.getYoChatPrefix().append(
+                            Component.text("Invalid operation!", NamedTextColor.RED)
+                    ));
+                }
             }
             default -> sender.sendMessage(plugin.getYoChatPrefix().append(
                     Component.text("Unknown subcommand. Use /yochat help for a list of commands.", NamedTextColor.RED)));
@@ -457,31 +800,40 @@ public class YoChatCommand implements TabExecutor {
         if (args.length == 1) {
             return Stream.of("help", "channels", "reload", "mute", "unmute")
                     .filter(opt -> opt.startsWith(args[0].toLowerCase()))
+                    .sorted()
                     .toList();
         }
 
         if (args.length == 2) {
             if (args[0].equalsIgnoreCase("channels")) {
-                return Stream.of("list", "create", "delete", "join")
+                return Stream.of("list", "create", "delete", "join", "leave", "members", "edit")
                         .filter(opt -> opt.startsWith(args[1].toLowerCase()))
+                        .sorted()
                         .toList();
             } else if (args[0].equalsIgnoreCase("mute")) {
                 return Stream.of("temp", "perm")
                         .filter(opt -> opt.startsWith(args[1].toLowerCase()))
+                        .sorted()
                         .toList();
             } else if (args[0].equalsIgnoreCase("unmute")) {
                 return MuteManager.getMutedPlayerNames().stream()
                         .filter(s -> s.startsWith(args[1].toLowerCase()))
+                        .sorted()
                         .toList();
             }
         }
 
         if (args.length == 3) {
             if (args[0].equalsIgnoreCase("channels")) {
-                if (args[1].equalsIgnoreCase("delete") || args[1].equalsIgnoreCase("join")) {
+                if (args[1].equalsIgnoreCase("delete")
+                        || args[1].equalsIgnoreCase("join")
+                        || args[1].equalsIgnoreCase("leave")
+                        || args[1].equalsIgnoreCase("members")
+                        || args[1].equalsIgnoreCase("edit")) {
                     return YoChatAPI.getPlugin().getChannelManager().getChannels().stream()
                             .map(ChatChannel::getName)
                             .filter(opt -> opt.toLowerCase().startsWith(args[2].toLowerCase()))
+                            .sorted()
                             .toList();
                 } else if (args[1].equalsIgnoreCase("create")) {
                     return Collections.singletonList("name");
@@ -491,15 +843,38 @@ public class YoChatCommand implements TabExecutor {
                         .map(OfflinePlayer::getName)
                         .filter(Objects::nonNull)
                         .filter(opt -> opt.toLowerCase().startsWith(args[2].toLowerCase()))
+                        .sorted()
                         .toList();
             } else if (args[0].equalsIgnoreCase("unmute")) {
                 return Collections.singletonList("reason");
             }
         }
 
+        ChatChannel channel = YoChatAPI.getChannel(args[2]);
+
         if (args.length == 4) {
-            if (args[0].equalsIgnoreCase("channels") && args[1].equalsIgnoreCase("create")) {
-                return Collections.singletonList("permission");
+            if (args[0].equalsIgnoreCase("channels")) {
+                if (args[1].equalsIgnoreCase("create")) {
+                    return Collections.singletonList("radius");
+                } else if (args[1].equalsIgnoreCase("members")) {
+                    if (channel == null) {
+                        return Collections.emptyList();
+                    }
+
+                    return Stream.of("add", "remove", "list")
+                            .filter(operation -> operation.startsWith(args[3].toLowerCase()))
+                            .sorted()
+                            .toList();
+                } else if (args[1].equalsIgnoreCase("edit")) {
+                    if (channel == null) {
+                        return Collections.emptyList();
+                    }
+
+                    return Stream.of("radius", "worlds", "strict", "permission", "name")
+                            .filter(opt -> opt.startsWith(args[3].toLowerCase()))
+                            .sorted()
+                            .toList();
+                }
             } else if (args[0].equalsIgnoreCase("mute")) {
                 if (args[1].equalsIgnoreCase("perm")) return Collections.singletonList("reason");
                 if (args[1].equalsIgnoreCase("temp")) return Collections.singletonList("time");
@@ -507,18 +882,63 @@ public class YoChatCommand implements TabExecutor {
         }
 
         if (args.length == 5) {
-            if (args[0].equalsIgnoreCase("channels") && args[1].equalsIgnoreCase("create")) {
-                return Collections.singletonList("radius");
+            if (args[0].equalsIgnoreCase("channels")) {
+                if (args[1].equalsIgnoreCase("create")) {
+                    return Stream.of("true", "false")
+                            .filter(opt -> opt.startsWith(args[4].toLowerCase()))
+                            .sorted()
+                            .toList();
+                } else if (args[1].equalsIgnoreCase("edit")) {
+                    if (channel == null) {
+                        return Collections.emptyList();
+                    }
+
+                    if (args[3].equalsIgnoreCase("permission")) {
+                        return List.of("permission", "-");
+
+                    } else if (args[3].equalsIgnoreCase("strict")) {
+                        return Stream.of("true", "false")
+                                .filter(opt -> opt.startsWith(args[4].toLowerCase()))
+                                .sorted()
+                                .toList();
+
+                    } else if (args[3].equalsIgnoreCase("radius")) {
+                        return Collections.singletonList("radius");
+
+                    } else if (args[3].equalsIgnoreCase("worlds")) {
+                        return Stream.of("add", "remove", "list")
+                                .filter(operation -> operation.startsWith(args[4].toLowerCase()))
+                                .sorted()
+                                .toList();
+                    } else if (args[3].equalsIgnoreCase("name")) {
+                        return Collections.singletonList("name");
+                    }
+                } else if (args[1].equalsIgnoreCase("members")) {
+                    if (channel == null) {
+                        return Collections.emptyList();
+                    }
+
+                    if (args[3].equalsIgnoreCase("add")) {
+                        return Bukkit.getOnlinePlayers().stream()
+                                .map(Player::getName)
+                                .filter(name -> name.startsWith(args[4].toLowerCase()))
+                                .sorted()
+                                .toList();
+
+                    } else if (args[3].equalsIgnoreCase("remove")) {
+                        return channel.getMembers().stream()
+                                .map(Player::getName)
+                                .filter(name -> name.startsWith(args[4].toLowerCase()))
+                                .sorted()
+                                .toList();
+                    }
+                }
             } else if (args[0].equalsIgnoreCase("mute") && args[1].equalsIgnoreCase("temp")) {
                 return Collections.singletonList("reason");
             }
         }
 
         if (args.length == 6 && args[0].equalsIgnoreCase("channels") && args[1].equalsIgnoreCase("create")) {
-            return Stream.of("true", "false").filter(opt -> opt.startsWith(args[5].toLowerCase())).toList();
-        }
-
-        if (args.length == 7 && args[0].equalsIgnoreCase("channels") && args[1].equalsIgnoreCase("create")) {
             return Collections.singletonList("worlds");
         }
 
