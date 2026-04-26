@@ -155,26 +155,27 @@ minimessage-customization:
   # If the value is true, the tag is allowed for everyone (false for not in use)
   # If the value is a string of characters, the tag has a required permission
   allowed-tags:
-    color: true
-    decoration: true
-    reset: true
-    newline: true
-    gradient: false
-    transition: false
-    pride: false
-    hover: false
-    click: false
-    insertion: false
-    keybind: false
-    translatable: false
-    translatablefallback: false
-    selector: false
-    score: false
-    nbt: false
-    font: false
-    shadow: false
-    sprite: false
-    sequentialhead: false
+      color: true
+      decoration: true
+      reset: true
+      newline: true
+      gradient: false
+      rainbow: false
+      transition: false
+      pride: false
+      hover: false
+      click: false
+      insertion: false
+      keybind: false
+      translatable: false
+      translatablefallback: false
+      selector: false
+      score: false
+      nbt: false
+      font: false
+      shadow: false
+      sprite: false
+      sequentialhead: false
 
 # If a player types someone's name in chat it will look like a ping in Discord for example
 mentioning:

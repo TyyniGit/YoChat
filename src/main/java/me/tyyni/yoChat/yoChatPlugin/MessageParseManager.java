@@ -91,8 +91,11 @@ public class MessageParseManager {
         put("color", StandardTags.color());
         put("decoration", StandardTags.decorations());
         put("reset", StandardTags.reset());
+        put("font", StandardTags.font());
+        put("shadow", StandardTags.shadowColor());
         put("newline", StandardTags.newline());
         put("gradient", StandardTags.gradient());
+        put("rainbow", StandardTags.rainbow());
         put("transition", StandardTags.transition());
         put("pride", StandardTags.pride());
         put("hover", StandardTags.hoverEvent());
@@ -104,8 +107,6 @@ public class MessageParseManager {
         put("selector", StandardTags.selector());
         put("score", StandardTags.score());
         put("nbt", StandardTags.nbt());
-        put("font", StandardTags.font());
-        put("shadow", StandardTags.shadowColor());
         put("sprite", StandardTags.sprite());
         put("sequentialhead", StandardTags.sequentialHead());
     }};
