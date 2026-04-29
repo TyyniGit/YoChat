@@ -1,7 +1,7 @@
 name: YoChat
 description: "The new best free chat plugin for Minecraft servers"
 prefix: YoChat
-version: '1.0.0'
+version: '1.0.1'
 
 main: me.tyyni.yoChat.yoChatPlugin.YoChat
 api-version: '1.21.11'

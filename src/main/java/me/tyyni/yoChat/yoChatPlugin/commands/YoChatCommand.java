@@ -190,6 +190,12 @@ public class YoChatCommand implements TabExecutor {
                 }
 
                 String channelName = args[2];
+                if (YoChatAPI.getPlugin().getChannelManager().getChannel(channelName) != null) {
+                    debug("Channel creation rejected: %s already exists", channelName);
+                    sender.sendMessage(plugin.getYoChatPrefix().append(
+                        Component.text("A channel with that name already exists!", NamedTextColor.RED)));
+                    return;
+                }
                 int radius;
                 try {
                     radius = Integer.parseInt(args[3]);
@@ -381,10 +387,16 @@ public class YoChatCommand implements TabExecutor {
                     }
                     case "name" -> {
                         String edit = args[4];
+                        if (YoChatAPI.getPlugin().getChannelManager().getChannel(edit) != null) {
+                            debug("Channel rename rejected: %s already exists", edit);
+                            sender.sendMessage(plugin.getYoChatPrefix().append(
+                                Component.text("A channel with that name already exists!", NamedTextColor.RED)));
+                            return;
+                        }
                         channel.setName(edit);
                         debug("Renamed channel %s to %s", channelName, edit);
 
-                        YoChatAPI.getPlugin().getChannelManager().getChannelsList().remove(channelName);
+                        YoChatAPI.getPlugin().getChannelManager().getChannelsList().remove(channelName.toLowerCase(java.util.Locale.ROOT));
                         ChatChannel newChannel = new ChatChannel(channel.getName(), channel.getRadius(), channel.isStrictWorld(), channel.getWorlds());
                         YoChatAPI.registerChannel(newChannel);
 
