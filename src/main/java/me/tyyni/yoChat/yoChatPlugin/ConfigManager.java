@@ -14,6 +14,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.util.*;
+import java.util.logging.Level;
 
 public class ConfigManager {
 
@@ -78,6 +79,11 @@ public class ConfigManager {
     private String muteCheckerInterval;
 
     @Getter
+    private String noChannelMessage;
+    @Getter
+    private String noPermissionMessage;
+
+    @Getter
     private boolean useChannelSpecificFormatting;
     @Getter
     private Map<ChatChannel, String> channelsFormats;
@@ -126,10 +132,14 @@ public class ConfigManager {
         isEnabled = config.getBoolean("general.enabled", true);
         useChannelSystem = config.getBoolean("general.use-channel-system", true);
         defaultChannel = channelManager.getChannel(config.getString("general.default-channel", "global"));
+        noChannelMessage = config.getString("general.no-channel-message", "<red>You don't belong to any channels! Please contact administrators.</red>");
+        noPermissionMessage = config.getString("general.no-permission-message", "<red>You don't have permission to execute this command!</red>");
 
-        useLuckPerms = config.getBoolean("addidional.useLuckPerms", true);
-        useVault = config.getBoolean("addidional.useVault", false);
-        usePlaceholderAPI = config.getBoolean("addidional.usePlaceholderAPI", true);
+        debug("Starting config load from %s", file.getAbsolutePath());
+
+        useLuckPerms = config.getBoolean("additional.useLuckPerms", true);
+        useVault = config.getBoolean("additional.useVault", false);
+        usePlaceholderAPI = config.getBoolean("additional.usePlaceholderAPI", true);
 
         chatFormat = config.getString("formatting.chat-format", "{player}: {message}");
         channelFormat = config.getString("formatting.channel-format", "{player}: {message}");
@@ -160,9 +170,25 @@ public class ConfigManager {
         mentioningFormat = config.getString("mentioning.format", "<blue>@{name}</blue>");
         useSound = config.getBoolean("mentioning.use-sound", true);
 
-        String soundname = config.getString("mentioning.sound", "ENTITY_EXPERIENCE_ORB_PICKUP");
-        NamespacedKey soundKey = NamespacedKey.minecraft(soundname.toLowerCase().replace("_", "."));
-        sound = Registry.SOUNDS.get(soundKey);
+        String soundInput = config.getString("mentioning.sound", "entity.experience_orb.pickup").toLowerCase();
+
+        if (soundInput.contains(":")) {
+            soundInput = soundInput.split(":")[1];
+        }
+
+        NamespacedKey soundKey = NamespacedKey.minecraft(soundInput.replace(".", "_"));
+
+        this.sound = Registry.SOUNDS.get(soundKey);
+
+        if (this.sound == null) {
+            this.sound = Registry.SOUNDS.get(NamespacedKey.minecraft(soundInput));
+        }
+
+        if (this.sound == null) {
+            plugin.getLogger().warning("Sound '" + soundInput + "' was not found. Using default: 'entity.experience_orb.pickup'");
+            this.sound = Sound.ENTITY_EXPERIENCE_ORB_PICKUP;
+        }
+
         soundVolume = (float) config.getDouble("mentioning.volume", 1.0);
         soundPitch = (float) config.getDouble("mentioning.pitch", 1.0);
 
@@ -174,6 +200,9 @@ public class ConfigManager {
                 String format = channelSpecificFormats.getString(key + ".format", null);
                 if(channel != null) {
                     channel.setFormat(format);
+                    debug("Loaded channel-specific format for channel '%s'", key);
+                } else {
+                    debug("Skipped channel-specific format for unknown channel '%s'", key);
                 }
             }
         }
@@ -191,9 +220,15 @@ public class ConfigManager {
         Component prefixComponent = YoChatAPI.getPlugin().getMessageParseManager().parseAdmin(prefix);
         plugin.setYoChatPrefix(prefixComponent);
 
-        if (debug) {
-            plugin.getLogger().info("[DEBUG] Config reloaded and variables updated!");
-        }
+        debug("Config reloaded and variables updated");
+        debug("general: enabled=%s, debug=%s, useChannelSystem=%s, defaultChannel=%s",
+                isEnabled, debug, useChannelSystem, defaultChannel != null ? defaultChannel.getName() : "null");
+        debug("hooks: useLuckPerms=%s, useVault=%s, usePlaceholderAPI=%s",
+                useLuckPerms, useVault, usePlaceholderAPI);
+        debug("moderation: enabled=%s, blockedWords=%d, webhookEnabled=%s",
+                isModerationEnabled, blockedwords != null ? blockedwords.size() : 0, webhookEnabled);
+        debug("mentioning: enabled=%s, useSound=%s, configuredSound=%s, resolvedSound=%s, volume=%s, pitch=%s",
+                useMentioning, useSound, soundInput, sound != null, soundVolume, soundPitch);
 
         if(!useLuckPerms && !useVault) {
             plugin.getLogger().severe("Configuration error!");
@@ -202,10 +237,12 @@ public class ConfigManager {
 
             if(Bukkit.getPluginManager().isPluginEnabled("Vault")) {
                 useVault = true;
+                debug("Recovered from invalid config by enabling Vault because plugin is present");
             } else if(Bukkit.getPluginManager().isPluginEnabled("LuckPerms")) {
                 useLuckPerms = true;
+                debug("Recovered from invalid config by enabling LuckPerms because plugin is present");
             } else {
-                plugin.getLogger().warning("Disabled plugin because LuckPerms ja LuckPerms both are not enabled!");
+                plugin.getLogger().warning("Disabled plugin because neither LuckPerms nor Vault is enabled!");
                 Bukkit.getPluginManager().disablePlugin(plugin);
             }
         }
@@ -214,12 +251,32 @@ public class ConfigManager {
             if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") == null) {
                 plugin.getLogger().warning("PlaceholderAPI plugin not found!");
                 usePlaceholderAPI = false;
+                debug("PlaceholderAPI support disabled because the plugin was not found");
             }
         }
 
         if(!isEnabled) {
             plugin.getLogger().warning("Disabled plugin!");
             Bukkit.getPluginManager().disablePlugin(plugin);
+        }
+    }
+
+    public void debug(String message) {
+        if (!debug) {
+            return;
+        }
+        plugin.getLogger().info("[DEBUG] " + message);
+    }
+
+    public void debug(String format, Object... args) {
+        if (!debug) {
+            return;
+        }
+
+        try {
+            debug(String.format(Locale.ROOT, format, args));
+        } catch (Exception ex) {
+            plugin.getLogger().log(Level.WARNING, "[DEBUG] Failed to format debug message: " + format, ex);
         }
     }
 }

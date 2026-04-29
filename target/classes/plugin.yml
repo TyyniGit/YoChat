@@ -1,7 +1,7 @@
 name: YoChat
 description: "The new best free chat plugin for Minecraft servers"
 prefix: YoChat
-version: '1.1.3-BETA1'
+version: '1.0.0'
 
 main: me.tyyni.yoChat.yoChatPlugin.YoChat
 api-version: '1.21.11'
@@ -43,6 +43,8 @@ permissions:
                    description: Permission for leaving chat channels.
                  yochat.commands.channels.members:
                    description: Permission for chat channels member handling.
+                 yochat.commands.channels.info:
+                   description: Permission for seeing info about channels.
 
               yochat.commands.help:
                 description: Permission for the help command.

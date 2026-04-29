@@ -43,6 +43,8 @@ permissions:
                    description: Permission for leaving chat channels.
                  yochat.commands.channels.members:
                    description: Permission for chat channels member handling.
+                 yochat.commands.channels.info:
+                   description: Permission for seeing info about channels.
 
               yochat.commands.help:
                 description: Permission for the help command.

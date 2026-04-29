@@ -6,9 +6,10 @@ import me.tyyni.yoChat.yoChatPlugin.ConfigManager;
 import me.tyyni.yoChat.yoChatPlugin.MuteManager;
 import me.tyyni.yoChat.yoChatAPI.YoChatAPI;
 import me.tyyni.yoChat.yoChatPlugin.objects.ChatChannel;
+import me.tyyni.yoChat.yoChatAPI.events.YoChatMessageEvent;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -25,9 +26,13 @@ public class ChatListener implements Listener {
         String plainText = PlainTextComponentSerializer.plainText().serialize(event.originalMessage());
         String lowerCaseText = plainText.toLowerCase(Locale.ROOT);
         ChatManager chatManager = YoChatAPI.getPlugin().getChatManager();
-        
+        ConfigManager config = ConfigManager.getInstance();
+
+        config.debug("Incoming chat from %s in world=%s: '%s'", player.getName(), player.getWorld().getName(), plainText);
+
         if (MuteManager.isMuted(player)) {
             event.setCancelled(true);
+            config.debug("Cancelled chat from muted player %s", player.getName());
             if (ConfigManager.getInstance().isUseMutedMessage()) {
                 Component formattedMuteMessage = chatManager.formatMuteMessage(ConfigManager.getInstance().getMutedMessage(), player);
                 player.sendMessage(formattedMuteMessage);
@@ -40,6 +45,7 @@ public class ChatListener implements Listener {
             if (matcher.find()) {
                 event.setCancelled(true);
                 String blockedword = matcher.group();
+                config.debug("Blocked word detected from %s: '%s'", player.getName(), blockedword);
                 Component formattedBadWordMessage = chatManager.formatMessage(ConfigManager.getInstance().getBlockedWordMessage(), player, blockedword);
                 player.sendMessage(formattedBadWordMessage);
                 return;
@@ -50,15 +56,31 @@ public class ChatListener implements Listener {
 
         if (ConfigManager.getInstance().isUseChannelSystem()) {
             channel = YoChatAPI.getPlugin().getChannelManager().getChannelByPlayer(player);
+        }
+
+        YoChatMessageEvent yoChatEvent = new YoChatMessageEvent(player, event.message(), channel);
+        Bukkit.getPluginManager().callEvent(yoChatEvent);
+
+        if (yoChatEvent.isCancelled()) {
+            event.setCancelled(true);
+            return;
+        }
+
+        channel = yoChatEvent.getChannel();
+        event.message(yoChatEvent.getMessage());
+
+        if (ConfigManager.getInstance().isUseChannelSystem()) {
+            config.debug("Resolved channel for %s -> %s", player.getName(), channel != null ? channel.getName() : "null");
 
             if (channel == null) {
                 event.setCancelled(true);
-                player.sendMessage(YoChatAPI.getPlugin().getYoChatPrefix().append(
-                        Component.text("You don't belong to any channels! Please contact administrators.", NamedTextColor.RED)));
+                config.debug("Cancelled chat because %s does not belong to a channel", player.getName());
+                player.sendMessage(YoChatAPI.getPlugin().getChatManager().formatMessage(ConfigManager.getInstance().getNoChannelMessage(), player, ""));
                 return;
             }
 
             ChatChannel finalChannel = channel;
+            int initialViewerCount = event.viewers().size();
             event.viewers().removeIf(viewer -> {
                 if (viewer instanceof Player targetPlayer) {
                     if (!finalChannel.getMembers().contains(targetPlayer)) return true;
@@ -77,6 +99,7 @@ public class ChatListener implements Listener {
                 }
                 return false;
             });
+            config.debug("Filtered viewers for channel %s: %d -> %d", finalChannel.getName(), initialViewerCount, event.viewers().size());
         }
 
         ChatChannel finalChannelForRenderer = channel;

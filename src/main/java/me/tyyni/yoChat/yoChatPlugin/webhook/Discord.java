@@ -31,12 +31,19 @@ public class Discord {
     public void sendMessage(WebhookPayload payload, String webhookUrl) {
         if (webhookUrl == null || webhookUrl.isEmpty()) {
             log.warn("Webhook URL is null or empty. Message not sent.");
+            if (ConfigManager.getInstance() != null) {
+                ConfigManager.getInstance().debug("Skipped Discord webhook send because URL was empty");
+            }
             return;
         }
 
         final String json = gson.toJson(payload);
+        URI uri = URI.create(webhookUrl);
+        if (ConfigManager.getInstance() != null) {
+            ConfigManager.getInstance().debug("Sending Discord webhook to host=%s payloadLength=%d", uri.getHost(), json.length());
+        }
         final HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(webhookUrl))
+                .uri(uri)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(json))
                 .build();
@@ -54,8 +61,15 @@ public class Discord {
                 }
             }
 
+            if (ConfigManager.getInstance() != null) {
+                ConfigManager.getInstance().debug("Discord webhook completed with status=%d", response.statusCode());
+            }
+
         }).exceptionally(ex -> {
             log.warn("Exeption: {}", String.valueOf(ex));
+            if (ConfigManager.getInstance() != null) {
+                ConfigManager.getInstance().debug("Discord webhook failed: %s", String.valueOf(ex));
+            }
             return null;
         });
     }

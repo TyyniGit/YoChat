@@ -1,5 +1,6 @@
 package me.tyyni.yoChat.yoChatPlugin.listeners;
 
+import me.tyyni.yoChat.yoChatAPI.YoChatAPI;
 import me.tyyni.yoChat.yoChatPlugin.ConfigManager;
 import me.tyyni.yoChat.yoChatPlugin.objects.ChatChannel;
 import org.bukkit.entity.Player;
@@ -12,11 +13,18 @@ public class PlayerJoinListener implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        if (ConfigManager.getInstance().isUseChannelSystem()) {
+        ConfigManager config = ConfigManager.getInstance();
+        if (config.isUseChannelSystem()) {
 
-            ChatChannel defaultChannel = ConfigManager.getInstance().getDefaultChannel();
+            ChatChannel defaultChannel = config.getDefaultChannel();
             if (defaultChannel != null && defaultChannel.canJoin(player)) {
-                defaultChannel.addMember(player);
+                YoChatAPI.getPlugin().getChannelManager().joinChannel(player, defaultChannel);
+                config.debug("Auto-joined %s to default channel %s", player.getName(), defaultChannel.getName());
+            } else {
+                config.debug("Did not auto-join %s to default channel (channel=%s, canJoin=%s)",
+                        player.getName(),
+                        defaultChannel != null ? defaultChannel.getName() : "null",
+                        defaultChannel != null && defaultChannel.canJoin(player));
             }
         }
     }

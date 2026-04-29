@@ -52,15 +52,18 @@ public class ChatManager {
 
     private boolean setupChat() {
         if (Bukkit.getPluginManager().getPlugin("Vault") == null) {
+            config.debug("Vault plugin not found, Vault chat hook disabled");
             return false;
         }
 
         RegisteredServiceProvider<Chat> rsp = Bukkit.getServer().getServicesManager().getRegistration(Chat.class);
         if (rsp == null) {
+            config.debug("Vault plugin found but no Chat service registration was available");
             return false;
         }
 
         setVaultChat(rsp.getProvider());
+        config.debug("Vault chat provider hooked: %s", rsp.getProvider().getClass().getName());
         return true;
     }
 
@@ -75,20 +78,19 @@ public class ChatManager {
             if (config.isUseLuckPerms()) {
                 prefix = getLuckPermsPrefix(player);
                 suffix = getLuckPermsSuffix(player);
+                config.debug("LuckPerms meta for %s -> prefix='%s', suffix='%s'", player.getName(), prefix, suffix);
             }
 
             if (config.isUseVault() && (prefix.isEmpty() || suffix.isEmpty())) {
                 if (vaultChat != null) {
                     if (prefix.isEmpty()) prefix = vaultChat.getPlayerPrefix(player);
                     if (suffix.isEmpty()) suffix = vaultChat.getPlayerSuffix(player);
+                    config.debug("Vault meta fallback for %s -> prefix='%s', suffix='%s'", player.getName(), prefix, suffix);
                 }
             }
 
             if (prefix.isEmpty() && suffix.isEmpty()) {
-                prefix = "";
-                suffix = "";
-
-                plugin.getLogger().warning("No prefix or suffix provided!");
+                config.debug("No prefix or suffix found for player %s", player.getName());
             }
         }
 
@@ -104,11 +106,11 @@ public class ChatManager {
 
         if (player != null && config.isUsePlaceholderAPI() && Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             finalLine = PlaceholderAPI.setPlaceholders(player, finalLine);
+            config.debug("Applied PlaceholderAPI placeholders for %s", player.getName());
         }
 
-        if (config.isDebug()) {
-            plugin.getLogger().info("DEBUG: Full line: " + finalLine);
-        }
+        config.debug("Processed format for player=%s template='%s' result='%s'",
+                player != null ? player.getName() : "null", format, finalLine);
 
         return finalLine;
     }
@@ -117,6 +119,10 @@ public class ChatManager {
         String formatted = processFormat(config.getChatFormat(), sender, Map.of("{message}", "<msg>"));
 
         return mpm.parseAdmin(formatted, Placeholder.component("msg", message));
+    }
+
+    public Component formatChannelFormat(ChatChannel channel) {
+        return mpm.parseAdmin(channel.getFormat());
     }
 
     public Component formatChannelMessage(ChatChannel channel, Player sender, Component message) {
@@ -213,12 +219,14 @@ public class ChatManager {
         if (viewer != null && config.isUseMentioning() && containsName(viewer, rawText)) {
             if (config.isUseSound()) {
                 Bukkit.getScheduler().runTask(plugin, () ->
-                        viewer.playSound(viewer.getLocation(), config.getSound(), config.getSoundVolume(), config.getSoundPitch())
+                        viewer.playSound(viewer, config.getSound(), config.getSoundVolume(), config.getSoundPitch())
                 );
             }
 
             String replacement = formatMention(config.getMentioningFormat(), viewer, sender);
             finalContent = rawText.replaceAll("(?i)" + Pattern.quote(viewer.getName()), replacement);
+            config.debug("Applied mention formatting: sender=%s viewer=%s message='%s'",
+                    sender.getName(), viewer.getName(), rawText);
         }
 
         return mpm.parse(sender, finalContent);
@@ -263,10 +271,17 @@ public class ChatManager {
         List<String> words = ConfigManager.getInstance().getBlockedwords();
         if (words == null || words.isEmpty()) {
             this.blockedPattern = Pattern.compile("BLOCK_LIST_IS_EMPTY_DO_NOT_MATCH");
+            config.debug("Blocked words list is empty");
             return;
         }
         String regex = words.stream().filter(w -> w != null && !w.trim().isEmpty()).map(Pattern::quote).collect(Collectors.joining("|"));
+        if (regex.isEmpty()) {
+            this.blockedPattern = Pattern.compile("BLOCK_LIST_IS_EMPTY_DO_NOT_MATCH");
+            config.debug("All blocked words were blank after filtering, pattern disabled");
+            return;
+        }
         blockedPattern = Pattern.compile("\\b(" + regex + ")\\b", Pattern.CASE_INSENSITIVE);
+        config.debug("Reloaded blocked words pattern with %d entries", words.size());
     }
 
     public long parseDuration(String duration) {
@@ -281,7 +296,7 @@ public class ChatManager {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime future;
 
-        return switch (unit) {
+        long parsed = switch (unit) {
             case "s" -> amount * 1000L;
             case "m" -> amount * 60000L;
             case "h" -> amount * 3600000L;
@@ -298,6 +313,8 @@ public class ChatManager {
             }
             default -> 0L;
         };
+        config.debug("Parsed duration input='%s' -> %d ms", duration, parsed);
+        return parsed;
     }
 
     public boolean containsName(Player player, String text) {

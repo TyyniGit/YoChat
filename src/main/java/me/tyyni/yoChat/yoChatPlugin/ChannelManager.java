@@ -1,5 +1,7 @@
 package me.tyyni.yoChat.yoChatPlugin;
 
+import me.tyyni.yoChat.yoChatAPI.events.YoChatChannelJoinEvent;
+import me.tyyni.yoChat.yoChatAPI.events.YoChatChannelLeaveEvent;
 import me.tyyni.yoChat.yoChatPlugin.objects.ChatChannel;
 import me.tyyni.yoChat.yoChatAPI.YoChatAPI;
 import net.kyori.adventure.text.Component;
@@ -35,18 +37,37 @@ public class ChannelManager {
     }
     public void register(ChatChannel channel) {
         channels.put(channel.getName().toLowerCase(Locale.ROOT), channel);
+        if (ConfigManager.getInstance() != null) {
+            ConfigManager.getInstance().debug("Registered channel %s", channel.getName());
+        }
     }
 
     public ChatChannel getChannel(String name) {
         return channels.get(name.toLowerCase(Locale.ROOT));
     }
+
+    public Map<String, ChatChannel> getChannelsList() {
+        return channels;
+    }
+
     public Collection<ChatChannel> getChannels() {
         return channels.values();
     }
 
     public void sendToChannel(ChatChannel channel, Player sender, Component message) {
-        Bukkit.getConsoleSender().sendMessage(YoChatAPI.getPlugin().getChatManager().formatChannelMessage(channel, sender, message));
+        if (ConfigManager.getInstance() != null) {
+            ConfigManager.getInstance().debug("Sending direct channel message to %s from %s", channel.getName(), sender.getName());
+        }
         Set<String> worlds = channel.getWorlds();
+
+        if (worlds != null && !worlds.isEmpty() && channel.isStrictWorld() && !worlds.contains(sender.getWorld().getName())) {
+            if (ConfigManager.getInstance() != null) {
+                ConfigManager.getInstance().debug("Blocked sendToChannel: sender %s is not in a valid world", sender.getName());
+            }
+            return;
+        }
+
+        Bukkit.getConsoleSender().sendMessage(YoChatAPI.getPlugin().getChatManager().formatChannelMessage(channel, sender, message));
 
         for (Player p : Bukkit.getOnlinePlayers()) {
             if(!channel.getMembers().contains(p)) continue;
@@ -57,9 +78,6 @@ public class ChannelManager {
             }
 
             if(worlds != null && !worlds.isEmpty()) {
-
-                if(channel.isStrictWorld() && !worlds.contains(sender.getWorld().getName())) return;
-
                 if(!worlds.contains(p.getWorld().getName())) continue;
             }
 
@@ -69,18 +87,25 @@ public class ChannelManager {
     }
 
     public ChatChannel createChannel(String channelName, int radius, boolean strictWorld, @Nullable Set<String> worlds) {
+        if (ConfigManager.getInstance() != null) {
+            ConfigManager.getInstance().debug("Creating channel %s radius=%d strictWorld=%s worlds=%s", channelName, radius, strictWorld, worlds);
+        }
         return new ChatChannel(channelName, radius, strictWorld, worlds);
     }
     public void deleteChannel(String channelName) {
         channels.remove(channelName.toLowerCase(Locale.ROOT));
+        if (ConfigManager.getInstance() != null) {
+            ConfigManager.getInstance().debug("Deleted channel %s", channelName);
+        }
     }
 
     public ChatChannel getChannelByPlayer(Player player) {
-        for (ChatChannel channel : channels.values()) {
+        for (ChatChannel channel : getChannels()) {
             if (channel.getMembers().contains(player)) {
                 return channel;
             }
         }
+        ConfigManager.getInstance().debug("No channel found for player %s", player.getName());
         return null;
     }
 
@@ -106,8 +131,8 @@ public class ChannelManager {
             plugin.getLogger().severe("Failed to save channels.yml: " + e.getMessage());
         }
 
-        if(ConfigManager.getInstance().isDebug()) {
-            plugin.getLogger().info("[DEBUG] " + "Saved channels!");
+        if (ConfigManager.getInstance() != null) {
+            ConfigManager.getInstance().debug("Saved %d channels", channels.size());
         }
     }
     public void loadChannels() {
@@ -130,14 +155,26 @@ public class ChannelManager {
             channel.setPermission(permission);
             register(channel);
         }
+
+        ConfigManager.getInstance().debug("Loaded %d channels", channels.size());
     }
 
     public void joinChannel(Player player, ChatChannel channel) {
         ChatChannel channelByPlayer = getChannelByPlayer(player);
         if(channelByPlayer != null) {
+            YoChatChannelLeaveEvent leaveEvent = new YoChatChannelLeaveEvent(player, channelByPlayer);
+            Bukkit.getPluginManager().callEvent(leaveEvent);
+            if (leaveEvent.isCancelled()) return;
+
             channelByPlayer.removeMember(player);
+            ConfigManager.getInstance().debug("Removed %s from channel %s", player.getName(), channelByPlayer.getName());
         }
 
-        channel.addMember(player);
+        YoChatChannelJoinEvent joinEvent = new YoChatChannelJoinEvent(player, channel);
+        Bukkit.getPluginManager().callEvent(joinEvent);
+        if (joinEvent.isCancelled()) return;
+
+        joinEvent.getChannel().addMember(player);
+        ConfigManager.getInstance().debug("Joined %s to channel %s", player.getName(), joinEvent.getChannel().getName());
     }
 }

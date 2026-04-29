@@ -1,4 +1,5 @@
 me\tyyni\yoChat\yoChatPlugin\listeners\ChatListener.class
+me\tyyni\yoChat\yoChatAPI\events\YoChatChannelJoinEvent.class
 me\tyyni\yoChat\yoChatAPI\YoChatAPI.class
 me\tyyni\yoChat\yoChatPlugin\webhook\WebhookPayload$Embed.class
 me\tyyni\yoChat\yoChatPlugin\webhook\WebhookPayload$Field$FieldBuilder.class
@@ -14,10 +15,12 @@ me\tyyni\yoChat\yoChatPlugin\PrefixManager.class
 me\tyyni\yoChat\yoChatPlugin\YoChat.class
 me\tyyni\yoChat\yoChatPlugin\ChatManager.class
 me\tyyni\yoChat\yoChatPlugin\webhook\WebhookPayload$Embed$EmbedBuilder.class
+me\tyyni\yoChat\yoChatAPI\events\YoChatMessageEvent.class
 me\tyyni\yoChat\yoChatPlugin\webhook\Discord.class
 me\tyyni\yoChat\yoChatPlugin\objects\MutedPlayer.class
 me\tyyni\yoChat\yoChatPlugin\webhook\WebhookPayload$Field.class
 me\tyyni\yoChat\yoChatPlugin\webhook\WebhookPayload.class
+me\tyyni\yoChat\yoChatAPI\events\YoChatChannelLeaveEvent.class
 me\tyyni\yoChat\yoChatPlugin\webhook\WebhookPayload$Author$AuthorBuilder.class
 me\tyyni\yoChat\yoChatPlugin\commands\YoChatCommand.class
 me\tyyni\yoChat\yoChatPlugin\MessageParseManager$1.class

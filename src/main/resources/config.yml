@@ -21,6 +21,12 @@ general:
   # The channel where players will connect automatically when joining the server
   default-channel: global
 
+  # Message sent when a player is not in any channel
+  no-channel-message: "<red>You don't belong to any channels! Please contact administrators.</red>"
+
+  # Message sent when a player doesn't have permission to use a command
+  no-permission-message: "<red>You don't have permission to execute this command!</red>"
+
 # Formatting Settings
 formatting:
   # The format for chat messages.
@@ -29,7 +35,7 @@ formatting:
   # - {message} for the chat message.
   # - {prefix} for the player's prefix
   # - {suffix} for the player's suffix
-  chat-format: "{prefix}{player}{suffix} <yellow><b>»</b></yellow> {message}"
+  chat-format: "{prefix}{player}{suffix} <yellow><b>»</b></yellow> <reset>{message}"
   # The format for channel messages.
   # Placeholders:
   # - {player} for the player's name
@@ -37,22 +43,29 @@ formatting:
   # - {prefix} for the player's prefix
   # - {suffix} for the player's suffix
   # - {channel} for the channel name
-  channel-format: "[{channel}] {prefix}{player}{suffix} <yellow><b>»</b></yellow> {message}"
+  channel-format: "[{channel}] {prefix}{player}{suffix} <yellow><b>»</b></yellow> <reset>{message}"
 
-  # Channel specific formatting overrides the chat format set in the "formatting" category and world specific formatting
+  # Channel-specific formatting overrides the chat format set in the "formatting" category and world-specific formatting
   channel-specific-formatting:
-    # Whether the channel specific formatting should be used
+    # Whether the channel-specific formatting should be used
     enabled: false
 
+    # Channel-specific formatting.
+    # Placeholders:
+    # - {player} for the player's name
+    # - {message} for the chat message.
+    # - {prefix} for the player's prefix
+    # - {suffix} for the player's suffix
+    # - {channel} for the channel name
     formats:
-    # Remove this after you learn how to use channel specific formatting
+    # Remove this after you learn how to use channel-specific formatting
       examplechannel:
         format: "{player}» {message}"
       example2:
         format: "{player}: {message}"
 
 # Other settings
-addidional:
+additional:
   # Either LuckPerms or vault has to be used or the plugin won't work
   useLuckPerms: true
   useVault: false
@@ -61,7 +74,7 @@ addidional:
 # Moderation settings
 moderation:
   # Whether the chat automoderation should be used
-  # If you have other chat moderation plugins switch enabled to false!
+  # If you have other chat moderation plugins, switch enabled to false!
   enabled: true
 
   # The message what will be sent to the player who said a blocked word
@@ -115,7 +128,7 @@ moderation:
   # - {player} for the player's name
   # - {prefix} for the player's prefix
   # - {suffix} for the player's suffix
-  # - {reason} for the unmute reason
+  # - {reason} for the reason of unmuting
   # - {pardoner} for the unmuter's name
   yougotunmuted-message: "<green>You got unmuted by <b>'{pardoner}'</b>!</green>"
 
@@ -130,7 +143,7 @@ moderation:
   timeended-message: "<green>Your mute is over!</green>"
 
   # How often should the plugin check if a player's mute has ended
-  # By reducing the time between checks, it will get more precise, but also uses more recources
+  # By reducing the time between checks, it will get more precise but also uses more recources
   mute-checker-interval: "10s"
 
   discord-webhook:
@@ -177,7 +190,7 @@ minimessage-customization:
       sprite: false
       sequentialhead: false
 
-# If a player types someone's name in chat it will look like a ping in Discord for example
+# If a player types someone's name in chat, for example, it will look like a ping in Discord
 mentioning:
   # Whether the mention system should be used
   enabled: true
@@ -196,9 +209,9 @@ mentioning:
   # Sound is only heard by the mentioned player
   use-sound: true
 
-  # Sounds should look the way they are in spigot's docs: https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Sound.html
-  # Example: Experience orb pickup -> ENTITY_EXPERIENCE_ORB_PICKUP
-  sound: "ENTITY_EXPERIENCE_ORB_PICKUP"
+  # Sounds should look the way they are in digminecraft's list, for example: https://www.digminecraft.com/lists/sound_list_pc.php
+  # Example: Experience orb pickup -> entity.experience_orb.pickup
+  sound: "entity.experience_orb.pickup"
 
   # Use decimals
   volume: 1.0

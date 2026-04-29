@@ -35,10 +35,6 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
     @Getter
     private final TextColor highlightColor = TextColor.fromHexString("#9863E7");
 
-    /*
-    * private PrefixManager prefixManager;
-    * private SuffixManager suffixManager;
-    */
     private ChatManager chatManager;
     private ChannelManager channelManager;
     private ConfigManager configManager;
@@ -49,11 +45,14 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
 
     @Override
     public void onLoad() {
-        saveDefaultConfig();
+        ensureDefaultResource("config.yml");
+        ensureDefaultResource("channels.yml");
+        ensureDefaultResource("mutedplayers.yml");
     }
 
     @Override
     public void onEnable() {
+        getLogger().info("Enabling YoChat");
         YoChatAPI.setProvider(this);
 
         try {
@@ -72,15 +71,19 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
         muteManager.load();
         muteManager.startMuteChecker();
         chatManager.reloadBlockedWords();
+        configManager.debug("Core managers initialized and runtime state loaded");
 
         registerEvents();
         registerCommands();
+        configManager.debug("Events and commands registered");
 
         sendHelloMessage();
+        configManager.debug("Plugin enable sequence completed");
     }
 
     @Override
     public void onDisable() {
+        debug("Starting plugin shutdown");
         for(ChatChannel channel : channelManager.getChannels()) {
             for(Player player : channel.getMembers()) {
                 channel.removeMember(player);
@@ -89,6 +92,7 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
 
         channelManager.saveChannels();
         muteManager.save();
+        debug("Plugin shutdown completed");
     }
 
     private void initializeManagers() {
@@ -98,20 +102,19 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
         this.channelManager = new ChannelManager(this);
         this.muteManager = new MuteManager(this);
         this.discord = new Discord();
-        /*
-        * suffixManager = new SuffixManager();
-        * prefixManager = new PrefixManager();
-        */
+        debug("Managers instantiated");
     }
 
     private void registerEvents() {
         getServer().getPluginManager().registerEvents(new ChatListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerQuitListener(), this);
+        debug("Registered chat, join and quit listeners");
     }
 
     private void registerCommands() {
         Objects.requireNonNull(getCommand("yochat")).setExecutor(new YoChatCommand());
+        debug("Registered /yochat command executor");
     }
 
     private void sendHelloMessage() {
@@ -146,16 +149,24 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
     @Override
     public MessageParseManager getMessageParseManager() {return messageParseManager;}
 
-    /* Prefix system might be implemented in the future.
-     * @Override
-     * public PrefixManager getPrefixManager() {
-     *    return prefixManager;
-     * }
-     *
-     * Suffix system might be implemented in the future.
-     *  @Override
-     *  public SuffixManager getSuffixManager() {
-     *  return suffixManager;
-     * }
-     */
+    private void debug(String message) {
+        if (configManager != null) {
+            configManager.debug(message);
+        }
+    }
+
+    private void ensureDefaultResource(String resourceName) {
+        if (!getDataFolder().exists() && !getDataFolder().mkdirs()) {
+            getLogger().warning("Failed to create plugin data folder for " + resourceName);
+            return;
+        }
+
+        File target = new File(getDataFolder(), resourceName);
+        if (target.exists()) {
+            return;
+        }
+
+        saveResource(resourceName, false);
+        getLogger().info("Generated default " + resourceName);
+    }
 }

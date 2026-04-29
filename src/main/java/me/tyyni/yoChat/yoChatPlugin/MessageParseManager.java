@@ -1,12 +1,16 @@
 package me.tyyni.yoChat.yoChatPlugin;
 
+import me.tyyni.yoChat.yoChatAPI.YoChatAPI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.ParsingException;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.minimessage.tag.standard.StandardTags;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -15,15 +19,18 @@ public class MessageParseManager {
     private MiniMessage mm;
 
     public void setupMM() {
+        boolean strictMode = ConfigManager.getInstance().getConfig().getBoolean("minimessage-customization.strict-mode", false);
         this.mm = MiniMessage.builder()
                 .tags(TagResolver.empty())
-                .strict(ConfigManager.getInstance().getConfig().getBoolean("minimessage-customization.strict-mode", false))
+                .strict(strictMode)
                 .build();
+        ConfigManager.getInstance().debug("MiniMessage configured with strictMode=%s", strictMode);
     }
 
     public TagResolver getPlayerResolver(Player player) {
         TagResolver.Builder resolverBuilder = TagResolver.builder();
         ConfigurationSection section = ConfigManager.getInstance().getConfig().getConfigurationSection("minimessage-customization.allowed-tags");
+        List<String> enabledTags = new ArrayList<>();
 
         if (section != null) {
             for (String tagName : section.getKeys(false)) {
@@ -34,17 +41,28 @@ public class MessageParseManager {
 
                 if (val instanceof Boolean && (Boolean) val) {
                     resolverBuilder.resolver(actualResolver);
+                    enabledTags.add(tagName.toLowerCase());
                 } else if (val instanceof String && player.hasPermission((String) val)) {
                     resolverBuilder.resolver(actualResolver);
+                    enabledTags.add(tagName.toLowerCase() + ":" + val);
                 }
             }
         }
+        ConfigManager.getInstance().debug("Built MiniMessage resolver for %s with %d enabled tags -> %s",
+                player.getName(), enabledTags.size(), enabledTags);
         return resolverBuilder.build();
     }
 
     public Component parse(Player player, String input) {
         if (input == null || input.isEmpty()) return Component.empty();
-        return this.mm.deserialize(adoptLegacy(input), getPlayerResolver(player));
+        String normalized = adoptLegacy(input);
+        ConfigManager.getInstance().debug("Parsing player message for %s: raw='%s' normalized='%s'", player.getName(), input, normalized);
+        try {
+            return this.mm.deserialize(normalized, getPlayerResolver(player));
+        } catch (ParsingException ex) {
+            YoChatAPI.getPlugin().getLogger().warning("Failed to parse chat message from " + player.getName() + ": " + ex.getMessage());
+            return Component.text(input);
+        }
     }
 
     public Component parseAdmin(String input, TagResolver... additionalResolvers) {
@@ -55,7 +73,14 @@ public class MessageParseManager {
                 .resolvers(additionalResolvers)
                 .build();
 
-        return this.mm.deserialize(adoptLegacy(input), finalResolver);
+        String normalized = adoptLegacy(input);
+        ConfigManager.getInstance().debug("Parsing admin message: raw='%s' normalized='%s' extraResolvers=%d", input, normalized, additionalResolvers.length);
+        try {
+            return this.mm.deserialize(normalized, finalResolver);
+        } catch (ParsingException ex) {
+            YoChatAPI.getPlugin().getLogger().warning("Failed to parse admin MiniMessage input: " + ex.getMessage());
+            return Component.text(input);
+        }
     }
 
     private String adoptLegacy(String input) {
@@ -108,6 +133,7 @@ public class MessageParseManager {
         put("score", StandardTags.score());
         put("nbt", StandardTags.nbt());
         put("sprite", StandardTags.sprite());
+        put("head", StandardTags.sequentialHead());
         put("sequentialhead", StandardTags.sequentialHead());
     }};
 }

@@ -1,6 +1,6 @@
 ![YoChat full logo](https://cdn.modrinth.com/data/cached_images/2a9a9e0792ed0bb46bad0764cdb6713a433c4c45.png)
 
-**YoChat** is a modern, high-performance chat management plugin designed for Minecraft servers that demand flexibility and style. Powered by MiniMessage, it offers beautiful gradients, a robust channel system, and built-in moderation tools. It also features full legacy color code support.
+**YoChat** is a modern, high-performance chat management plugin designed for Minecraft servers that demand flexibility and style. Powered by MiniMessage, it offers beautiful gradients, a robust channel system and built-in moderation tools. It also features full legacy color code support.
 
 ---
 
@@ -11,7 +11,7 @@
 * **Integrated Moderation:** Built-in mute system and word blacklisting.
 * **Smart Mentions:** Ping players in chat with custom sounds and visual highlights.
 * **Discord Integration:** Log mutes and unmutes directly to your Discord staff channels via Webhooks.
-* **Extensive Compatibility:** Native support for LuckPerms, Vault, and PlaceholderAPI.
+* **Extensive Compatibility:** Native support for LuckPerms, Vault and PlaceholderAPI.
 
 ---
 
@@ -45,7 +45,7 @@ YoChat uses a highly customizable `config.yml`. You can customize basically ever
 
 ## Requirements
 * **Java 17** or higher.
-* **Paper** (1.21.x recommended for best compatibility).
+* **Paper** (1.21.x recommended for the best compatibility).
 * **LuckPerms** or **Vault** for prefix/suffix support.
 * **PlaceholderAPI** (Optional) for additional variables.
 
@@ -70,7 +70,9 @@ You can hook into YoChat using the YoChat API:
 
 ```java
 import me.tyyni.yoChat.yoChatAPI.YoChatAPI;
+import me.tyyni.yoChat.yoChatPlugin.objects.ChatChannel;
 import net.kyori.adventure.text.Component;
 
-YoChatAPI.sendGlobalMessage(Component.text("Hello from another plugin."), player);
+List<ChatChannel> channels = YoChatAPI.getChannels();
 ```
+###### This project is developed with the **assistance** of AI to ensure code quality and efficiency.

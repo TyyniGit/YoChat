@@ -2,10 +2,12 @@ package me.tyyni.yoChat.yoChatPlugin.objects;
 
 import lombok.Getter;
 import lombok.Setter;
+import me.tyyni.yoChat.yoChatPlugin.ConfigManager;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -78,7 +80,11 @@ public class ChatChannel {
      * @return true if the player has the required permission or if no permission is set.
      */
     public boolean canJoin(Player player) {
-        return permission == null || player.hasPermission(permission);
+        boolean allowed = permission == null || player.hasPermission(permission);
+        if (!allowed) {
+            debug("Player %s cannot join channel %s because they lack permission %s", player.getName(), name, permission);
+        }
+        return allowed;
     }
 
     /**
@@ -88,6 +94,7 @@ public class ChatChannel {
      */
     public void addMember(Player player) {
         members.add(player);
+        debug("Player %s added to channel %s", player.getName(), name);
     }
 
     /**
@@ -97,6 +104,7 @@ public class ChatChannel {
      */
     public void removeMember(Player player) {
         members.remove(player);
+        debug("Player %s removed from channel %s", player.getName(), name);
     }
 
     /**
@@ -120,6 +128,7 @@ public class ChatChannel {
             worlds = new HashSet<>();
             worlds.add(worldName);
         }
+        debug("Added world %s to channel %s", worldName, name);
     }
     /**
      * Removes a world from the channel's world list.
@@ -131,6 +140,7 @@ public class ChatChannel {
             worlds.remove(worldName);
 
             if(worlds.isEmpty()) worlds = null;
+            debug("Removed world %s from channel %s", worldName, name);
         }
     }
     /**
@@ -144,5 +154,12 @@ public class ChatChannel {
             return worlds.contains(worldName);
         }
         return false;
+    }
+
+    private void debug(String format, Object... args) {
+        ConfigManager configManager = ConfigManager.getInstance();
+        if (configManager != null) {
+            configManager.debug(String.format(Locale.ROOT, format, args));
+        }
     }
 }

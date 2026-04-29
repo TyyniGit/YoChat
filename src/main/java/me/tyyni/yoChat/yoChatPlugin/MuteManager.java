@@ -37,6 +37,8 @@ public class MuteManager {
 
     public static void addMutedPlayer(MutedPlayer mutedPlayer) {
         mutedPlayers.put(mutedPlayer.getUuid().toString(), mutedPlayer);
+        ConfigManager.getInstance().debug("Added muted player %s duration=%d reason=%s",
+                mutedPlayer.getUuid(), mutedPlayer.getDuration(), mutedPlayer.getReason());
     }
 
     public static MutedPlayer getMutedPlayer(String uuid) {
@@ -44,6 +46,7 @@ public class MuteManager {
     }
     public static void removeMutedPlayer(MutedPlayer mutedPlayer) {
         mutedPlayers.remove(mutedPlayer.getUuid().toString());
+        ConfigManager.getInstance().debug("Removed muted player %s", mutedPlayer.getUuid());
     }
 
     public static boolean isMuted(Player player) {
@@ -56,7 +59,10 @@ public class MuteManager {
 
     public static List<String> getMutedPlayerNames() {
         return mutedPlayers.values().stream()
-                .map(s -> Bukkit.getOfflinePlayer(s.getUuid()).getName())
+                .map(s -> {
+                    String name = Bukkit.getOfflinePlayer(s.getUuid()).getName();
+                    return name != null ? name : s.getUuid().toString();
+                })
                 .toList();
     }
 
@@ -64,7 +70,10 @@ public class MuteManager {
         mutedPlayers.clear();
 
         ConfigurationSection section = config.getConfigurationSection("mutedplayers");
-        if (section == null) return;
+        if (section == null) {
+            ConfigManager.getInstance().debug("No muted players section found in mutedplayers.yml");
+            return;
+        }
 
         for (String key : section.getKeys(false)) {
 
@@ -77,6 +86,8 @@ public class MuteManager {
             MutedPlayer mutedPlayer = new MutedPlayer(uuid, duration, whenStarted, reason, punisher);
             mutedPlayers.put(uuid.toString(), mutedPlayer);
         }
+
+        ConfigManager.getInstance().debug("Loaded %d muted players", mutedPlayers.size());
     }
 
     public void save() {
@@ -98,12 +109,15 @@ public class MuteManager {
         } catch (Exception e) {
             plugin.getLogger().severe("Failed to save config: " + e.getMessage());
         }
+
+        ConfigManager.getInstance().debug("Saved %d muted players", mutedPlayers.size());
     }
 
     public void checkMutes() {
         for (MutedPlayer mp : mutedPlayers.values()) {
             if (mp.hasExpired()) {
                 removeMutedPlayer(mp);
+                ConfigManager.getInstance().debug("Mute expired for %s", mp.getUuid());
 
                 if (ConfigManager.getInstance().isUseTimeEndedMessage()) {
                     Bukkit.getScheduler().runTask(plugin, () -> {
@@ -125,6 +139,8 @@ public class MuteManager {
     public void startMuteChecker() {
         long millis = YoChatAPI.getPlugin().getChatManager().parseDuration(ConfigManager.getInstance().getMuteCheckerInterval());
         setInterval((millis / 1000L) * 20L);
+        ConfigManager.getInstance().debug("Starting mute checker with interval=%s (%d ticks)",
+                ConfigManager.getInstance().getMuteCheckerInterval(), getInterval());
 
         Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, this::checkMutes, 0L, getInterval());
     }

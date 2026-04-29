@@ -1,0 +1,27 @@
+# YoChat channels configuration
+# You can create as many channels as you want.
+#
+# Example channel configuration:
+# channels:
+#   global:
+#     permission: "yochat.channel.global"
+#     radius: -1 # -1 for global (no radius)
+#     strict-world: false # If true, players can only hear each other if they are in the same world
+#     worlds: [] # List of worlds where this channel is active. Empty for all worlds.
+#   staff:
+#     permission: "yochat.channel.staff"
+#     radius: -1
+#     strict-world: false
+#     worlds: []
+#   local:
+#     permission: null
+#     radius: 100
+#     strict-world: true
+#     worlds: ["world", "world_nether", "world_the_end"]
+
+channels:
+  global:
+    permission: null
+    radius: -1
+    strict-world: false
+    worlds: []
