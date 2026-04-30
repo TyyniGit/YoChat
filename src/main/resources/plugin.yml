@@ -10,6 +10,9 @@ load: STARTUP
 softdepend: [ PlaceholderAPI, Vault, LuckPerms ]
 authors: [ Tyyni ]
 
+libraries:
+    - net.kyori:adventure-text-minimessage:5.0.0
+
 commands:
   yochat:
     description: Main command for YoChat plugin. Use /yochat help for more information.

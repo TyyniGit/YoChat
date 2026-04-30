@@ -144,7 +144,7 @@ public class ChatChannel {
         }
     }
     /**
-     * Checks if the worlds list contains a world.
+     * Checks if the world list contains a world.
      *
      * @param worldName The world to check.
      * @return true if the list contains the world.
