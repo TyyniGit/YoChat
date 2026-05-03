@@ -1002,6 +1002,8 @@ public class YoChatCommand implements TabExecutor {
                     index++;
                 }
             }
+
+            return;
         }
 
         sender.sendMessage(plugin.getYoChatPrefix().append(
