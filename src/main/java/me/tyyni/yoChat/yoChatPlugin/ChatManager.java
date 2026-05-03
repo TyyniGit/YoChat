@@ -7,6 +7,7 @@ import me.tyyni.yoChat.yoChatPlugin.objects.ChatChannel;
 import me.tyyni.yoChat.yoChatPlugin.objects.MutedPlayer;
 import me.tyyni.yoChat.yoChatAPI.YoChatAPI;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextReplacementConfig;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.luckperms.api.LuckPermsProvider;
@@ -139,7 +140,7 @@ public class ChatManager {
         return mpm.parseAdmin(processFormat(format, sender, Map.of("{blockedword}", blockedword)));
     }
 
-    public String formatMention(String format, Player receiver, Player mentioner) {
+    public Component formatMention(String format, Player receiver, Player mentioner) {
         String mentionerprefix = "";
         String mentionersuffix = "";
 
@@ -162,7 +163,7 @@ public class ChatManager {
                 "{mentionerprefix}", mentionerprefix
         );
 
-        return processFormat(format, receiver, placeholders);
+        return mpm.parseAdmin(processFormat(format, receiver, placeholders));
     }
 
     public Component formatMuteMessage(String format, Player sender) {
@@ -211,17 +212,18 @@ public class ChatManager {
 
     public Component applyMentionFormatting(Player sender, @Nullable Player viewer, Component message) {
         String rawText = PlainTextComponentSerializer.plainText().serialize(message);
-        String finalContent = rawText;
 
         if (viewer != null && config.isUseMentioning() && containsName(viewer, rawText)) {
-
-            String replacement = formatMention(config.getMentioningFormat(), viewer, sender);
-            finalContent = rawText.replaceAll("(?i)" + Pattern.quote(viewer.getName()), replacement);
+            Component replacement = formatMention(config.getMentioningFormat(), viewer, sender);
             config.debug("Applied mention formatting: sender=%s viewer=%s message='%s'",
                     sender.getName(), viewer.getName(), rawText);
+            return message.replaceText(TextReplacementConfig.builder()
+                    .match("(?i)" + Pattern.quote(viewer.getName()))
+                    .replacement(replacement)
+                    .build());
         }
 
-        return mpm.parse(sender, finalContent);
+        return message;
     }
 
     private String getLuckPermsPrefix(Player player) {
