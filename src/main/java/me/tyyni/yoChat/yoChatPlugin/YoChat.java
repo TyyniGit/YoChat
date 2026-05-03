@@ -40,6 +40,7 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
     private ConfigManager configManager;
     private MuteManager muteManager;
     private MessageParseManager messageParseManager;
+    private ChatPipelineManager chatPipelineManager;
     @Getter
     private Discord discord;
 
@@ -102,6 +103,7 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
         this.channelManager = new ChannelManager(this);
         this.muteManager = new MuteManager(this);
         this.discord = new Discord();
+        this.chatPipelineManager = new ChatPipelineManager();
         debug("Managers instantiated");
     }
 
@@ -132,7 +134,6 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
         return this;
     }
 
-
     @Override
     public ChatManager getChatManager() {
         return chatManager;
@@ -148,6 +149,11 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
 
     @Override
     public MessageParseManager getMessageParseManager() {return messageParseManager;}
+
+    @Override
+    public ChatPipelineManager getChatPipelineManager() {
+        return chatPipelineManager;
+    }
 
     private void debug(String message) {
         if (configManager != null) {

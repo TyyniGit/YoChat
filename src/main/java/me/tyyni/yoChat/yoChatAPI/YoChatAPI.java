@@ -1,7 +1,10 @@
 package me.tyyni.yoChat.yoChatAPI;
 
 import lombok.Setter;
+import me.tyyni.yoChat.yoChatAPI.chatPipeline.ChatPipelineStep;
+import me.tyyni.yoChat.yoChatAPI.chatPipeline.Stage;
 import me.tyyni.yoChat.yoChatPlugin.MuteManager;
+import me.tyyni.yoChat.yoChatPlugin.ChatPipelineManager;
 import me.tyyni.yoChat.yoChatPlugin.YoChat;
 import me.tyyni.yoChat.yoChatPlugin.objects.ChatChannel;
 import me.tyyni.yoChat.yoChatPlugin.objects.MutedPlayer;
@@ -262,6 +265,21 @@ public class YoChatAPI {
     public static Component parseAdminMessage(String input) {
         checkProvider();
         return provider.getMessageParseManager().parseAdmin(input);
+    }
+
+    public static void registerStep(Stage stage, ChatPipelineStep nextStage) {
+        checkProvider();
+        provider.getChatPipelineManager().registerStep(stage, nextStage);
+    }
+
+    public static void registerStep(Stage stage, ChatPipelineStep nextStage, int priority) {
+        checkProvider();
+        provider.getChatPipelineManager().registerStep(stage, nextStage, priority);
+    }
+
+    public static List<ChatPipelineManager.RegisteredPipelineStep> getRegisteredPipelineSteps(Stage stage) {
+        checkProvider();
+        return provider.getChatPipelineManager().getSteps(stage);
     }
 
     private static void checkProvider() {

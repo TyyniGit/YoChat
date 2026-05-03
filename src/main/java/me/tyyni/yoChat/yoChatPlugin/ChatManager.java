@@ -36,13 +36,10 @@ public class ChatManager {
 
     @Getter
     private Pattern blockedPattern;
-    private final YoChat plugin;
     private final ConfigManager config = ConfigManager.getInstance();
     private final MessageParseManager mpm = YoChatAPI.getPlugin().getMessageParseManager();
 
     public ChatManager(YoChat plugin) {
-        this.plugin = plugin;
-
         if (setupChat()) {
             if (ConfigManager.getInstance().isDebug()) {
                 plugin.getLogger().info("Vault chat hook enabled!");
@@ -217,11 +214,6 @@ public class ChatManager {
         String finalContent = rawText;
 
         if (viewer != null && config.isUseMentioning() && containsName(viewer, rawText)) {
-            if (config.isUseSound()) {
-                Bukkit.getScheduler().runTask(plugin, () ->
-                        viewer.playSound(viewer, config.getSound(), config.getSoundVolume(), config.getSoundPitch())
-                );
-            }
 
             String replacement = formatMention(config.getMentioningFormat(), viewer, sender);
             finalContent = rawText.replaceAll("(?i)" + Pattern.quote(viewer.getName()), replacement);

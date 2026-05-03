@@ -14,6 +14,8 @@ public interface YoChatProvider {
 
     MessageParseManager getMessageParseManager();
 
+    ChatPipelineManager getChatPipelineManager();
+
     // Suffix system might be implemented in the future.
     // SuffixManager getSuffixManager();
 

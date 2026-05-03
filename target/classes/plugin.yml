@@ -1,7 +1,7 @@
 name: YoChat
 description: "The new best free chat plugin for Minecraft servers"
 prefix: YoChat
-version: '1.0.1'
+version: '1.1.0'
 
 main: me.tyyni.yoChat.yoChatPlugin.YoChat
 api-version: '1.21.11'
@@ -12,6 +12,14 @@ authors: [ Tyyni ]
 
 libraries:
     - net.kyori:adventure-text-minimessage:5.0.0
+    - net.kyori:adventure-text-serializer-legacy:5.0.0
+    - net.kyori:adventure-text-serializer-plain:5.0.0
+    - net.kyori:adventure-text-serializer-gson:5.0.0
+    - net.kyori:adventure-text-serializer-json:5.0.0
+    - net.kyori:adventure-text-serializer-ansi:5.0.0
+    - net.kyori:adventure-text-serializer-commons:5.0.0
+    - net.kyori:adventure-api:5.0.0
+    - net.kyori:adventure-text-logger-slf4j:5.0.0
 
 commands:
   yochat:
@@ -52,6 +60,11 @@ permissions:
               yochat.commands.help:
                 description: Permission for the help command.
 
+              yochat.commands.debug:
+                description: Permission for debug commands.
+                children:
+                    yochat.commands.debug.pipeline:
+                        description: Permission for debugging the chat pipeline.
               yochat.commands.mute:
                 description: Permission for the mute command.
               yochat.commands.unmute:

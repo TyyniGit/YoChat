@@ -4,9 +4,11 @@ import com.tchristofferson.configupdater.ConfigUpdater;
 import me.tyyni.yoChat.yoChatPlugin.ConfigManager;
 import me.tyyni.yoChat.yoChatPlugin.MuteManager;
 import me.tyyni.yoChat.yoChatPlugin.YoChat;
+import me.tyyni.yoChat.yoChatPlugin.ChatPipelineManager;
 import me.tyyni.yoChat.yoChatPlugin.objects.MutedPlayer;
 import me.tyyni.yoChat.yoChatPlugin.webhook.WebhookPayload;
 import me.tyyni.yoChat.yoChatAPI.YoChatAPI;
+import me.tyyni.yoChat.yoChatAPI.chatPipeline.Stage;
 import me.tyyni.yoChat.yoChatPlugin.objects.ChatChannel;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
@@ -61,6 +63,9 @@ public class YoChatCommand implements TabExecutor {
             case "channels":
                 handleChannels(sender, args);
                 break;
+            case "debug":
+                handleDebug(sender, args);
+                break;
             case "mute":
                 handleMute(sender, args);
                 break;
@@ -96,6 +101,9 @@ public class YoChatCommand implements TabExecutor {
 
         sender.sendMessage(Component.text("/yochat channels ", plugin.getMainColor())
                 .append(Component.text("- Channel management commands", plugin.getHighlightColor())));
+
+        sender.sendMessage(Component.text("/yochat debug ", plugin.getMainColor())
+                .append(Component.text("- Debug commands", plugin.getHighlightColor())));
 
         sender.sendMessage(Component.text("/yochat mute ", plugin.getMainColor())
                 .append(Component.text("- Mute command", plugin.getHighlightColor())));
@@ -953,13 +961,60 @@ public class YoChatCommand implements TabExecutor {
         debug("Unmute command finished for target=%s", playerName);
     }
 
+    private void handleDebug(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("yochat.commands.debug")) {
+            sendNoPermissionMessage(sender);
+            return;
+        }
+
+        if (args.length == 1) {
+            sender.sendMessage(plugin.getYoChatPrefix().append(Component.text("Debug commands:", plugin.getMainColor())));
+            sender.sendMessage(Component.text("/yochat debug pipeline", plugin.getMainColor())
+                    .append(Component.text(" - Shows the pipeline", plugin.getHighlightColor())));
+            return;
+        }
+
+        if (args.length == 2 && args[1].equalsIgnoreCase("pipeline")) {
+            if(!sender.hasPermission("yochat.commands.debug.pipeline")) {
+                sendNoPermissionMessage(sender);
+                return;
+            }
+
+            sender.sendMessage(plugin.getYoChatPrefix().append(Component.text("Pipeline debug:", plugin.getMainColor())));
+
+            for (Stage stage : Stage.values()) {
+                List<ChatPipelineManager.RegisteredPipelineStep> steps = YoChatAPI.getPlugin().getChatPipelineManager().getSteps(stage);
+
+                sender.sendMessage(Component.text(stage.name(), plugin.getHighlightColor(), TextDecoration.BOLD)
+                    .append(Component.text(" (" + steps.size() + ")", plugin.getMainColor())));
+
+                if (steps.isEmpty()) {
+                    sender.sendMessage(Component.text("  - empty", NamedTextColor.GRAY));
+                    continue;
+                }
+
+                int index = 1;
+                for (ChatPipelineManager.RegisteredPipelineStep step : steps) {
+                    String threadMode = step.asyncSafe() ? "async-safe" : "main-thread";
+                    sender.sendMessage(Component.text("  " + index + ". ", plugin.getMainColor())
+                        .append(Component.text(step.step().getClass().getSimpleName(), plugin.getHighlightColor()))
+                        .append(Component.text(" priority=" + step.priority() + " thread=" + threadMode, plugin.getMainColor())));
+                    index++;
+                }
+            }
+        }
+
+        sender.sendMessage(plugin.getYoChatPrefix().append(
+                Component.text("Unknown debug subcommand. Use /yochat debug pipeline.", NamedTextColor.RED)));
+    }
+
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
         if (!sender.hasPermission("yochat.tabcomplete")) return Collections.emptyList();
         if (!(sender instanceof Player player)) return Collections.emptyList();
 
         if (args.length == 1) {
-            return Stream.of("help", "channels", "reload", "mute", "unmute")
+            return Stream.of("help", "channels", "reload", "debug", "mute", "unmute")
                 .filter(opt -> opt.startsWith(args[0].toLowerCase()))
                 .sorted()
                 .toList();
@@ -968,6 +1023,11 @@ public class YoChatCommand implements TabExecutor {
         if (args.length == 2) {
             if (args[0].equalsIgnoreCase("channels")) {
                 return Stream.of("list", "create", "delete", "join", "leave", "members", "edit", "info")
+                    .filter(opt -> opt.startsWith(args[1].toLowerCase()))
+                    .sorted()
+                    .toList();
+            } else if (args[0].equalsIgnoreCase("debug")) {
+                return Stream.of("pipeline")
                     .filter(opt -> opt.startsWith(args[1].toLowerCase()))
                     .sorted()
                     .toList();
@@ -1021,6 +1081,8 @@ public class YoChatCommand implements TabExecutor {
                     .toList();
             } else if (args[0].equalsIgnoreCase("unmute")) {
                 return Collections.singletonList("reason");
+            } else if (args[0].equalsIgnoreCase("debug")) {
+                return Collections.emptyList();
             } else {
                 return Collections.emptyList();
             }
