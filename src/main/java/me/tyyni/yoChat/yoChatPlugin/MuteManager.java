@@ -8,12 +8,14 @@ import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class MuteManager {
+    private static final long MIN_MUTE_CHECK_INTERVAL_TICKS = 20L;
 
     @Getter
     private static MuteManager instance;
@@ -22,6 +24,7 @@ public class MuteManager {
     private final YoChat plugin;
     private final File file;
     private final YamlConfiguration config;
+    private BukkitTask muteCheckerTask;
 
     public MuteManager(YoChat plugin) {
         this.plugin = plugin;
@@ -137,11 +140,27 @@ public class MuteManager {
     long interval;
 
     public void startMuteChecker() {
-        long millis = YoChatAPI.getPlugin().getChatManager().parseDuration(ConfigManager.getInstance().getMuteCheckerInterval());
-        setInterval((millis / 1000L) * 20L);
+        stopMuteChecker();
+        setInterval(resolveIntervalTicks());
         ConfigManager.getInstance().debug("Starting mute checker with interval=%s (%d ticks)",
                 ConfigManager.getInstance().getMuteCheckerInterval(), getInterval());
 
-        Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, this::checkMutes, 0L, getInterval());
+        muteCheckerTask = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, this::checkMutes, getInterval(), getInterval());
+    }
+
+    public void stopMuteChecker() {
+        if (muteCheckerTask != null) {
+            muteCheckerTask.cancel();
+            muteCheckerTask = null;
+        }
+    }
+
+    public long resolveIntervalTicks() {
+        long millis = YoChatAPI.getPlugin().getChatManager().parseDuration(ConfigManager.getInstance().getMuteCheckerInterval());
+        if (millis <= 0L) {
+            return MIN_MUTE_CHECK_INTERVAL_TICKS;
+        }
+
+        return Math.max(MIN_MUTE_CHECK_INTERVAL_TICKS, Math.round(millis / 50.0d));
     }
 }

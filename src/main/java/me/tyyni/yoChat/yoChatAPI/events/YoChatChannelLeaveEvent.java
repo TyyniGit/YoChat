@@ -9,6 +9,11 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Fired before a player is removed from a YoChat channel.
+ *
+ * <p>Cancelling this event prevents the leave from happening.</p>
+ */
 public class YoChatChannelLeaveEvent extends Event implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     @Getter
@@ -17,6 +22,12 @@ public class YoChatChannelLeaveEvent extends Event implements Cancellable {
     private ChatChannel channel;
     private boolean cancelled;
 
+    /**
+     * Creates a new channel leave event.
+     *
+     * @param player the player leaving the channel
+     * @param channel the channel being left
+     */
     public YoChatChannelLeaveEvent(Player player, ChatChannel channel) {
         this.player = player;
         this.channel = channel;
@@ -37,6 +48,11 @@ public class YoChatChannelLeaveEvent extends Event implements Cancellable {
         return handlers;
     }
 
+    /**
+     * Returns the static Bukkit handler list for this event type.
+     *
+     * @return the handler list
+     */
     public static HandlerList getHandlerList() {
         return handlers;
     }

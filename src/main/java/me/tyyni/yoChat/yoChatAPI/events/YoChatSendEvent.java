@@ -10,6 +10,11 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Fired right before YoChat hands the message off for final delivery.
+ *
+ * <p>This event is asynchronous and may be cancelled.</p>
+ */
 public class YoChatSendEvent extends Event implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     @Getter
@@ -20,12 +25,19 @@ public class YoChatSendEvent extends Event implements Cancellable {
     private ChatChannel channel;
     private boolean cancelled;
 
-     public YoChatSendEvent(Player sender, Component message, ChatChannel channel) {
-         super(true); // Async
-         this.sender = sender;
-         this.message = message;
-         this.channel = channel;
-     }
+    /**
+     * Creates a new send event.
+     *
+     * @param sender the player who sent the message
+     * @param message the current message component
+     * @param channel the resolved channel, if any
+     */
+    public YoChatSendEvent(Player sender, Component message, ChatChannel channel) {
+        super(true); // Async
+        this.sender = sender;
+        this.message = message;
+        this.channel = channel;
+    }
 
     @Override
     public boolean isCancelled() {
@@ -42,6 +54,11 @@ public class YoChatSendEvent extends Event implements Cancellable {
         return handlers;
     }
 
+    /**
+     * Returns the static Bukkit handler list for this event type.
+     *
+     * @return the handler list
+     */
     public static HandlerList getHandlerList() {
         return handlers;
     }

@@ -72,6 +72,9 @@ public class YoChatCommand implements TabExecutor {
             case "unmute":
                 handleUnmute(sender, args);
                 break;
+            case "player":
+                handlePlayer(sender, args);
+                break;
             default:
                 debug("Unknown subcommand from %s: %s", sender.getName(), subCommand);
                 sender.sendMessage(plugin.getYoChatPrefix().append(
@@ -80,6 +83,104 @@ public class YoChatCommand implements TabExecutor {
         }
 
         return true;
+    }
+
+    private void handlePlayer(@NotNull CommandSender sender, @NotNull String @NotNull [] args) {
+        if (sender instanceof Player && !sender.hasPermission("yochat.commands.player")) {
+            sendNoPermissionMessage(sender);
+            return;
+        }
+
+        if (args.length < 2) {
+            sender.sendMessage(plugin.getYoChatPrefix().append(Component.text("Usage: /yochat player <player> <info|setprefix|removeprefix|setsuffix|removesuffix>>", NamedTextColor.RED)));
+            return;
+        }
+
+        String playerName = args[1];
+        OfflinePlayer player = findKnownPlayer(playerName);
+        if (player == null) {
+            sender.sendMessage(plugin.getYoChatPrefix().append(Component.text("Player not found!", NamedTextColor.RED)));
+            return;
+        }
+
+        String resolvedPlayerName = getResolvedPlayerName(player, playerName);
+
+        if (args.length < 3) {
+            sender.sendMessage(plugin.getYoChatPrefix().append(Component.text("Usage: /yochat player <player> <info|setprefix|removeprefix|setsuffix|removesuffix>", NamedTextColor.RED)));
+            return;
+        }
+
+        String infoType = args[2].toLowerCase();
+        switch (infoType) {
+            case "info":
+                String prefixString = plugin.getPrefixManager().getPrefix(player);
+                String suffixString = plugin.getSuffixManager().getSuffix(player);
+                if(prefixString == null || prefixString.isEmpty()) prefixString = null;
+                if(suffixString == null || suffixString.isEmpty()) suffixString = null;
+                Component prefix = prefixString != null ? plugin.getMessageParseManager().parseAdmin(prefixString) : null;
+                Component suffix = suffixString != null ? plugin.getMessageParseManager().parseAdmin(suffixString) : null;
+
+                sender.sendMessage(plugin.getYoChatPrefix().append(
+                    Component.text("Player ", plugin.getMainColor())
+                        .append(Component.text(resolvedPlayerName, plugin.getHighlightColor())
+                            .append(Component.text(" info: ", plugin.getMainColor()))
+                            .appendNewline()
+                            .append(Component.text("Prefix: ", plugin.getMainColor())
+                                .append(prefix != null ? prefix : Component.text("None", plugin.getHighlightColor()))
+                            .appendNewline()
+                            .append(Component.text("Suffix: ", plugin.getMainColor())
+                                .append(suffix != null ? suffix : Component.text("None", plugin.getHighlightColor())))))));
+                debug("Player info for %s: prefix=%s suffix=%s", resolvedPlayerName, plugin.getPrefixManager().getPrefix(player), plugin.getSuffixManager().getSuffix(player));
+                break;
+            case "setprefix":
+                if(args.length < 4) {
+                    sender.sendMessage(plugin.getYoChatPrefix().append(Component.text("Usage: /yochat player <player> setprefix <prefix>", NamedTextColor.RED)));
+                    return;
+                }
+
+                String newPrefix = args[3];
+                YoChatAPI.setPrefix(player, newPrefix);
+                sender.sendMessage(plugin.getYoChatPrefix().append(
+                    Component.text("Set prefix for ", plugin.getMainColor())
+                        .append(Component.text(resolvedPlayerName, plugin.getHighlightColor())
+                            .append(Component.text(" to ", plugin.getMainColor())
+                                .append(plugin.getMessageParseManager().parseAdmin(newPrefix))))));
+                debug("Set prefix for %s to %s", resolvedPlayerName, newPrefix);
+                break;
+            case "setsuffix":
+                if(args.length < 4) {
+                    sender.sendMessage(plugin.getYoChatPrefix().append(Component.text("Usage: /yochat player <player> setsuffix <suffix>", NamedTextColor.RED)));
+                    return;
+                }
+
+                String newSuffix = args[3];
+                YoChatAPI.setSuffix(player, newSuffix);
+                sender.sendMessage(plugin.getYoChatPrefix().append(
+                    Component.text("Set suffix for ", plugin.getMainColor())
+                        .append(Component.text(resolvedPlayerName, plugin.getHighlightColor())
+                            .append(Component.text(" to ", plugin.getMainColor())
+                                .append(Component.text(newSuffix, plugin.getHighlightColor()))))));
+                debug("Set suffix for %s to %s", resolvedPlayerName, newSuffix);
+                break;
+            case "removeprefix":
+                YoChatAPI.setPrefix(player, null);
+                sender.sendMessage(plugin.getYoChatPrefix().append(
+                    Component.text("Removed prefix for ", plugin.getMainColor())
+                        .append(Component.text(resolvedPlayerName, plugin.getHighlightColor()))));
+                debug("Removed prefix for %s", resolvedPlayerName);
+                break;
+            case "removesuffix":
+                YoChatAPI.setSuffix(player, null);
+                sender.sendMessage(plugin.getYoChatPrefix().append(
+                    Component.text("Removed suffix for ", plugin.getMainColor())
+                        .append(Component.text(resolvedPlayerName, plugin.getHighlightColor()))
+                ));
+                debug("Removed suffix for %s", resolvedPlayerName);
+                break;
+            default:
+                sender.sendMessage(plugin.getYoChatPrefix().append(Component.text("Invalid player command type. Use: <info|setprefix|removeprefix|setsuffix|removesuffix>", NamedTextColor.RED)));
+                break;
+        }
     }
 
     private void handleHelp(CommandSender sender) {
@@ -110,6 +211,9 @@ public class YoChatCommand implements TabExecutor {
 
         sender.sendMessage(Component.text("/yochat unmute ", plugin.getMainColor())
                 .append(Component.text("- Unmute command", plugin.getHighlightColor())));
+
+        sender.sendMessage(Component.text("/yochat player ", plugin.getMainColor())
+                .append(Component.text("- Player info command", plugin.getHighlightColor())));
     }
 
     private void handleReload(CommandSender sender) {
@@ -127,7 +231,7 @@ public class YoChatCommand implements TabExecutor {
             configManager.load();
             api.getChatManager().reloadBlockedWords();
             api.getMessageParseManager().setupMM();
-            api.getMuteManager().setInterval(api.getChatManager().parseDuration(configManager.getMuteCheckerInterval()) * 20);
+            api.getMuteManager().startMuteChecker();
             debug("Reload completed: muteIntervalTicks=%d", api.getMuteManager().getInterval());
         } catch (IOException e) {
             plugin.getLogger().severe("Failed to update config.yml: " + e.getMessage());
@@ -253,6 +357,7 @@ public class YoChatCommand implements TabExecutor {
                 ChatChannel channel = YoChatAPI.getPlugin().getChannelManager().createChannel(channelName, radius, strictWorld, worlds);
                 if (channel != null) {
                     YoChatAPI.registerChannel(channel);
+                    persistChannels();
                     debug("Created channel %s radius=%d strict=%s worlds=%s", channelName, radius, strictWorld, worlds);
 
                     List<Component> worldComponents = worlds != null ? worlds.stream()
@@ -309,6 +414,7 @@ public class YoChatCommand implements TabExecutor {
                     return;
                 }
                 YoChatAPI.getPlugin().getChannelManager().deleteChannel(channelName);
+                persistChannels();
                 debug("Deleted channel %s by %s", channelName, sender.getName());
                 sender.sendMessage(plugin.getYoChatPrefix().append(
                     Component.text("Channel ", plugin.getMainColor())
@@ -375,6 +481,7 @@ public class YoChatCommand implements TabExecutor {
                         String edit = args[4];
                         if (edit.equalsIgnoreCase("-")) {
                             channel.setPermission(null);
+                            persistChannels();
                             debug("Removed permission from channel %s", channelName);
 
                             sender.sendMessage(plugin.getYoChatPrefix().append(
@@ -384,6 +491,7 @@ public class YoChatCommand implements TabExecutor {
                         }
 
                         channel.setPermission(edit);
+                        persistChannels();
                         debug("Set permission for channel %s to %s", channelName, edit);
 
                         sender.sendMessage(plugin.getYoChatPrefix().append(
@@ -401,12 +509,8 @@ public class YoChatCommand implements TabExecutor {
                                 Component.text("A channel with that name already exists!", NamedTextColor.RED)));
                             return;
                         }
-                        channel.setName(edit);
-                        debug("Renamed channel %s to %s", channelName, edit);
-
-                        YoChatAPI.getPlugin().getChannelManager().getChannelsList().remove(channelName.toLowerCase(java.util.Locale.ROOT));
-                        ChatChannel newChannel = new ChatChannel(channel.getName(), channel.getRadius(), channel.isStrictWorld(), channel.getWorlds());
-                        YoChatAPI.registerChannel(newChannel);
+                        YoChatAPI.getPlugin().getChannelManager().renameChannel(channelName, edit);
+                        persistChannels();
 
                         sender.sendMessage(plugin.getYoChatPrefix().append(
                             Component.text("Name changed to ", plugin.getMainColor())
@@ -438,6 +542,7 @@ public class YoChatCommand implements TabExecutor {
                         }
 
                         channel.setStrictWorld(strictWorld);
+                        persistChannels();
                         debug("Set strictWorld for channel %s to %s", channelName, strictWorld);
 
                         sender.sendMessage(plugin.getYoChatPrefix().append(
@@ -461,6 +566,7 @@ public class YoChatCommand implements TabExecutor {
                         }
 
                         channel.setRadius(radius);
+                        persistChannels();
                         debug("Set radius for channel %s to %d", channelName, radius);
 
                         sender.sendMessage(plugin.getYoChatPrefix().append(
@@ -504,6 +610,7 @@ public class YoChatCommand implements TabExecutor {
                                 }
 
                                 channel.addWorld(worldName);
+                                persistChannels();
                                 debug("Added world %s to channel %s", worldName, channelName);
 
                                 sender.sendMessage(plugin.getYoChatPrefix().append(
@@ -534,6 +641,7 @@ public class YoChatCommand implements TabExecutor {
                                 }
 
                                 channel.removeWorld(worldName);
+                                persistChannels();
                                 debug("Removed world %s from channel %s", worldName, channelName);
 
                                 sender.sendMessage(plugin.getYoChatPrefix().append(
@@ -1016,7 +1124,7 @@ public class YoChatCommand implements TabExecutor {
         if (!(sender instanceof Player player)) return Collections.emptyList();
 
         if (args.length == 1) {
-            return Stream.of("help", "channels", "reload", "debug", "mute", "unmute")
+            return Stream.of("help", "channels", "reload", "debug", "mute", "unmute", "player")
                 .filter(opt -> opt.startsWith(args[0].toLowerCase()))
                 .sorted()
                 .toList();
@@ -1045,6 +1153,13 @@ public class YoChatCommand implements TabExecutor {
                     .toList();
             } else if (args[0].equalsIgnoreCase("help") || args[0].equalsIgnoreCase("reload")) {
                 return Collections.emptyList();
+            } else if (args[0].equalsIgnoreCase("player")) {
+                return Arrays.stream(Bukkit.getOfflinePlayers())
+                    .map(OfflinePlayer::getName)
+                    .filter(Objects::nonNull)
+                    .filter(opt -> opt.toLowerCase().startsWith(args[1].toLowerCase()))
+                    .sorted()
+                    .toList();
             } else {
                 return Collections.emptyList();
             }
@@ -1085,6 +1200,11 @@ public class YoChatCommand implements TabExecutor {
                 return Collections.singletonList("reason");
             } else if (args[0].equalsIgnoreCase("debug")) {
                 return Collections.emptyList();
+            } else if (args[0].equalsIgnoreCase("player")) {
+                return Stream.of("setsuffix", "removesuffix", "setprefix", "removeprefix", "info")
+                    .filter(opt -> opt.startsWith(args[2].toLowerCase()))
+                    .sorted()
+                    .toList();
             } else {
                 return Collections.emptyList();
             }
@@ -1120,6 +1240,13 @@ public class YoChatCommand implements TabExecutor {
             } else if (args[0].equalsIgnoreCase("mute")) {
                 if (args[1].equalsIgnoreCase("perm")) return Collections.singletonList("reason");
                 if (args[1].equalsIgnoreCase("temp")) return Collections.singletonList("time");
+            } else if (args[0].equalsIgnoreCase("player")) {
+                if(args[2].equalsIgnoreCase("setsuffix")) return Collections.singletonList("suffix");
+                if(args[2].equalsIgnoreCase("setprefix")) return Collections.singletonList("prefix");
+
+                if(args[2].equalsIgnoreCase("removeprefix")
+                    || args[2].equalsIgnoreCase("removesuffix")
+                    || args[2].equalsIgnoreCase("info")) return Collections.emptyList();
             } else {
                 return Collections.emptyList();
             }
@@ -1316,6 +1443,31 @@ public class YoChatCommand implements TabExecutor {
         if (configManager != null) {
             configManager.debug(format, args);
         }
+    }
+
+    private void persistChannels() {
+        YoChatAPI.getPlugin().getChannelManager().saveChannels();
+    }
+
+    private @Nullable OfflinePlayer findKnownPlayer(@NotNull String playerName) {
+        Player onlinePlayer = Bukkit.getPlayerExact(playerName);
+        if (onlinePlayer != null) {
+            debug("Found player %s", playerName);
+            return onlinePlayer;
+        }
+
+        debug("Player %s not found", playerName);
+        debug("Looking for player %s in the database", playerName);
+        return Arrays.stream(Bukkit.getOfflinePlayers())
+                .filter(offlinePlayer -> offlinePlayer.getName() != null)
+                .filter(offlinePlayer -> offlinePlayer.getName().equalsIgnoreCase(playerName))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private @NotNull String getResolvedPlayerName(@NotNull OfflinePlayer player, @NotNull String fallbackName) {
+        String resolvedName = player.getName();
+        return resolvedName != null && !resolvedName.isBlank() ? resolvedName : fallbackName;
     }
 
     private ConfigManager config() {

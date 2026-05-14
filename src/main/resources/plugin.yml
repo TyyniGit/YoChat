@@ -58,6 +58,8 @@ permissions:
                 description: Permission for the mute command.
               yochat.commands.unmute:
                 description: Permission for the unmute command.
+              yochat.commands.player:
+                description: Permission for the player command.
 
           yochat.tabcomplete:
                 description: Permission for tab completing in the commands of YoChat.

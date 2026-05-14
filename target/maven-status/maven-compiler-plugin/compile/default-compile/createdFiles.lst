@@ -24,6 +24,8 @@ me\tyyni\yoChat\yoChatPlugin\webhook\WebhookPayload$Embed.class
 me\tyyni\yoChat\yoChatPlugin\MessageParseManager.class
 me\tyyni\yoChat\yoChatPlugin\MuteManager.class
 me\tyyni\yoChat\yoChatAPI\interfaces\YoChatProvider.class
+me\tyyni\yoChat\yoChatPlugin\ChatManager$StructuredMessageFormat.class
+me\tyyni\yoChat\yoChatPlugin\ChatManager$PreparedFormat.class
 me\tyyni\yoChat\yoChatPlugin\objects\ChatChannel.class
 me\tyyni\yoChat\yoChatPlugin\PrefixManager.class
 me\tyyni\yoChat\yoChatPlugin\YoChat.class
@@ -31,6 +33,7 @@ me\tyyni\yoChat\yoChatPlugin\ChatManager.class
 me\tyyni\yoChat\yoChatAPI\chatPipeline\Stage.class
 me\tyyni\yoChat\yoChatPlugin\webhook\WebhookPayload$Embed$EmbedBuilder.class
 me\tyyni\yoChat\yoChatAPI\events\YoChatMessageEvent.class
+me\tyyni\yoChat\yoChatPlugin\ChatManager$PlayerFormatValues.class
 me\tyyni\yoChat\yoChatPlugin\webhook\Discord.class
 me\tyyni\yoChat\yoChatPlugin\objects\MutedPlayer.class
 me\tyyni\yoChat\yoChatPlugin\webhook\WebhookPayload$Field.class

@@ -1,6 +1,7 @@
 package me.tyyni.yoChat.yoChatAPI;
 
 import lombok.Setter;
+import me.tyyni.yoChat.yoChatAPI.chatPipeline.ChatContext;
 import me.tyyni.yoChat.yoChatAPI.chatPipeline.ChatPipelineStep;
 import me.tyyni.yoChat.yoChatAPI.chatPipeline.Stage;
 import me.tyyni.yoChat.yoChatPlugin.MuteManager;
@@ -10,13 +11,11 @@ import me.tyyni.yoChat.yoChatPlugin.objects.ChatChannel;
 import me.tyyni.yoChat.yoChatPlugin.objects.MutedPlayer;
 import me.tyyni.yoChat.yoChatAPI.interfaces.YoChatProvider;
 import net.kyori.adventure.text.Component;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class YoChatAPI {
 
@@ -210,7 +209,7 @@ public class YoChatAPI {
     }
 
     /**
-     * Returns the names of all muted players that can be resolved by Bukkit.
+     * Returns the names of all muted players that Bukkit can resolve.
      *
      * @return a list of muted player names
      */
@@ -267,19 +266,200 @@ public class YoChatAPI {
         return provider.getMessageParseManager().parseAdmin(input);
     }
 
+    /**
+     * Registers a pipeline step using the step's own default priority.
+     *
+     * @param stage the pipeline stage to register into
+     * @param nextStage the step implementation to register
+     */
     public static void registerStep(Stage stage, ChatPipelineStep nextStage) {
         checkProvider();
         provider.getChatPipelineManager().registerStep(stage, nextStage);
     }
 
+    /**
+     * Registers a pipeline step with an explicit priority.
+     *
+     * @param stage the pipeline stage to register into
+     * @param nextStage the step implementation to register
+     * @param priority the explicit priority for execution ordering
+     */
     public static void registerStep(Stage stage, ChatPipelineStep nextStage, int priority) {
         checkProvider();
         provider.getChatPipelineManager().registerStep(stage, nextStage, priority);
     }
 
+    /**
+     * Returns the registered pipeline steps for a specific stage.
+     *
+     * @param stage the stage to inspect
+     * @return an immutable snapshot of registered steps for that stage
+     */
     public static List<ChatPipelineManager.RegisteredPipelineStep> getRegisteredPipelineSteps(Stage stage) {
         checkProvider();
         return provider.getChatPipelineManager().getSteps(stage);
+    }
+
+    /**
+     * Returns all registered pipeline steps across every stage.
+     *
+     * @return a snapshot containing every registered pipeline step
+     */
+    public static Collection<ChatPipelineManager.RegisteredPipelineStep> getAllRegisteredPipelineSteps() {
+        checkProvider();
+        return provider.getChatPipelineManager().getRegisteredSteps().values().stream().flatMap(Collection::stream).toList();
+    }
+
+    /**
+     * Removes all registered steps from a single stage.
+     *
+     * @param stage the stage to clear
+     */
+    public static void clearPipelineSteps(Stage stage) {
+        checkProvider();
+        provider.getChatPipelineManager().clearSteps(stage);
+    }
+
+    /**
+     * Removes all registered pipeline steps from every stage.
+     */
+    public static void clearAllPipelineSteps() {
+        checkProvider();
+        provider.getChatPipelineManager().clearAllSteps();
+    }
+
+    /**
+     * Unregisters a pipeline step from every stage where it is currently present.
+     *
+     * @param step the step instance to remove
+     */
+    public static void unregisterStep(ChatPipelineStep step) {
+        checkProvider();
+        provider.getChatPipelineManager().unregisterStep(step);
+    }
+
+    /**
+     * Unregisters a pipeline step from a specific stage.
+     *
+     * @param step the step instance to remove
+     * @param stage the stage to remove it from
+     */
+    public static void unregisterStep(ChatPipelineStep step, Stage stage) {
+        checkProvider();
+        provider.getChatPipelineManager().unregisterStep(stage, step);
+    }
+
+    /**
+     * Alias for clearing all registered pipeline steps.
+     */
+    public static void unregisterAllSteps() {
+        checkProvider();
+        provider.getChatPipelineManager().clearAllSteps();
+    }
+
+    /**
+     * Alias for clearing all registered steps from a specific stage.
+     *
+     * @param stage the stage to clear
+     */
+    public static void unregisterAllSteps(Stage stage) {
+        checkProvider();
+        provider.getChatPipelineManager().clearSteps(stage);
+    }
+
+    /**
+     * Executes a single pipeline stage against the given context.
+     *
+     * @param stage the stage to execute
+     * @param context the mutable chat context to process
+     */
+    public static void executePipeline(Stage stage, ChatContext context) {
+        checkProvider();
+        provider.getChatPipelineManager().execute(stage, context);
+    }
+
+    /**
+     * Executes the full YoChat pipeline against the given context.
+     *
+     * @param context the mutable chat context to process
+     */
+    public static void executePipeline(ChatContext context) {
+        checkProvider();
+        provider.getChatPipelineManager().execute(context);
+    }
+
+    /**
+     * Returns a snapshot of pipeline steps grouped by stage.
+     *
+     * @return a stage-to-steps mapping snapshot
+     */
+    public static Map<Stage, List<ChatPipelineStep>> getPipelineSteps() {
+        checkProvider();
+        return provider.getChatPipelineManager().getPipelineSteps();
+    }
+
+    /**
+     * Returns the custom YoChat prefix for a player.
+     *
+     * @param player the player to inspect
+     * @return the configured prefix, or an empty string when none is set
+     */
+    public static String getPrefix(Player player) {
+        return getPrefix((OfflinePlayer) player);
+    }
+
+    /**
+     * Returns the custom YoChat prefix for an offline player.
+     *
+     * @param player the offline player to inspect
+     * @return the configured prefix, or an empty string when none is set
+     */
+    public static String getPrefix(OfflinePlayer player) {
+        checkProvider();
+        return provider.getPrefixManager().getPrefix(player);
+    }
+
+    /**
+     * Sets or clears the custom YoChat prefix for an offline player.
+     *
+     * @param player the player whose prefix should be changed
+     * @param prefix the new prefix, or {@code null} / blank to clear it
+     */
+    public static void setPrefix(OfflinePlayer player, String prefix) {
+        checkProvider();
+        provider.getPrefixManager().setPrefix(player, prefix);
+    }
+
+    /**
+     * Returns the custom YoChat suffix for a player.
+     *
+     * @param player the player to inspect
+     * @return the configured suffix, or an empty string when none is set
+     */
+    public static String getSuffix(Player player) {
+        return getSuffix((OfflinePlayer) player);
+    }
+
+    /**
+     * Returns the custom YoChat suffix for an offline player.
+     *
+     * @param player the offline player to inspect
+     * @return the configured suffix, or an empty string when none is set
+     */
+    public static String getSuffix(OfflinePlayer player) {
+        checkProvider();
+        return provider.getSuffixManager().getSuffix(player);
+    }
+
+    /**
+     * Sets or clears the custom YoChat suffix for an offline player.
+     *
+     * @param player the player whose suffix should be changed
+     * @param suffix the new suffix, or {@code null} / blank to clear it
+     */
+    public static void setSuffix(OfflinePlayer player, String suffix) {
+        checkProvider();
+        provider.getSuffixManager().setSuffix(player, suffix);
     }
 
     private static void checkProvider() {
@@ -287,27 +467,4 @@ public class YoChatAPI {
             throw new IllegalStateException("YoChatProvider is not set! Please set it before using the API.");
         }
     }
-
-    // Prefix and suffix systems might be implemented in the future.
-    /* public static void setPrefix(Player player, String prefix) {
-    *    checkProvider();
-    *    provider.getPrefixManager().setPrefix(player, prefix);
-    * }
-    *
-    * public static String getPrefix(Player player) {
-    *     checkProvider();
-    *   return provider.getPrefixManager().getPrefix(player);
-    * }
-    *
-    * public static String getSuffix(Player player) {
-    *    checkProvider();
-    *    return provider.getSuffixManager().getSuffix(player);
-    * }
-    *
-    * public static void setSuffix(Player player, String suffix) {
-    *    checkProvider();
-    *    provider.getSuffixManager().setSuffix(player, suffix);
-    * }
-    *
-     */
 }

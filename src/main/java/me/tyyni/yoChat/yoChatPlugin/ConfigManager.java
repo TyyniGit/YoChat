@@ -30,11 +30,7 @@ public class ConfigManager {
     @Getter
     private boolean isEnabled;
     @Getter
-    private boolean useLuckPerms;
-    @Getter
     private boolean usePlaceholderAPI;
-    @Getter
-    private boolean useVault;
 
     @Getter
     private String chatFormat;
@@ -45,6 +41,8 @@ public class ConfigManager {
     private boolean useChannelSystem;
     @Getter
     private ChatChannel defaultChannel;
+    @Getter
+    private String defaultChannelName;
 
     @Getter
     private List<String> blockedwords;
@@ -107,6 +105,9 @@ public class ConfigManager {
     @Getter
     private Float soundPitch;
 
+    @Getter
+    private List<String> priorityOrder;
+
     public ConfigManager(YoChat plugin) {
         this.plugin = plugin;
         instance = this;
@@ -131,15 +132,18 @@ public class ConfigManager {
         debug = config.getBoolean("general.debug", false);
         isEnabled = config.getBoolean("general.enabled", true);
         useChannelSystem = config.getBoolean("general.use-channel-system", true);
-        defaultChannel = channelManager.getChannel(config.getString("general.default-channel", "global"));
+        defaultChannelName = config.getString("general.default-channel", "global");
+        defaultChannel = channelManager.getChannel(defaultChannelName);
         noChannelMessage = config.getString("general.no-channel-message", "<red>You don't belong to any channels! Please contact administrators.</red>");
         noPermissionMessage = config.getString("general.no-permission-message", "<red>You don't have permission to execute this command!</red>");
 
         debug("Starting config load from %s", file.getAbsolutePath());
 
-        useLuckPerms = config.getBoolean("additional.useLuckPerms", true);
-        useVault = config.getBoolean("additional.useVault", false);
         usePlaceholderAPI = config.getBoolean("additional.usePlaceholderAPI", true);
+        priorityOrder = config.getStringList("additional.priority-order");
+        if (priorityOrder.isEmpty()) {
+            priorityOrder = Arrays.asList("LuckPerms", "Vault");
+        }
 
         chatFormat = config.getString("formatting.chat-format", "{player}: {message}");
         channelFormat = config.getString("formatting.channel-format", "{player}: {message}");
@@ -222,25 +226,21 @@ public class ConfigManager {
 
         debug("Config reloaded and variables updated");
         debug("general: enabled=%s, debug=%s, useChannelSystem=%s, defaultChannel=%s",
-                isEnabled, debug, useChannelSystem, defaultChannel != null ? defaultChannel.getName() : "null");
-        debug("hooks: useLuckPerms=%s, useVault=%s, usePlaceholderAPI=%s",
-                useLuckPerms, useVault, usePlaceholderAPI);
-        debug("moderation: enabled=%s, blockedWords=%d, webhookEnabled=%s",
-                isModerationEnabled, blockedwords != null ? blockedwords.size() : 0, webhookEnabled);
-        debug("mentioning: enabled=%s, useSound=%s, configuredSound=%s, resolvedSound=%s, volume=%s, pitch=%s",
-                useMentioning, useSound, soundInput, sound != null, soundVolume, soundPitch);
+            isEnabled, debug, useChannelSystem, defaultChannel != null ? defaultChannel.getName() : "null");
+        debug("hooks: usePlaceholderAPI=%s, order=%s",
+            usePlaceholderAPI, priorityOrder.toString());
 
-        if(!useLuckPerms && !useVault) {
+        if(!priorityOrder.contains("LuckPerms") && !priorityOrder.contains("Vault")) {
             plugin.getLogger().severe("Configuration error!");
-            plugin.getLogger().severe("LuckPerms and Vault not enabled");
+            plugin.getLogger().severe("LuckPerms and Vault not found in priority list!");
             plugin.getLogger().severe("YoChat needs at least one of them to work");
 
             if(Bukkit.getPluginManager().isPluginEnabled("Vault")) {
-                useVault = true;
-                debug("Recovered from invalid config by enabling Vault because plugin is present");
+                priorityOrder.add("Vault");
+                debug("Recovered from invalid config by adding Vault to priority list because plugin is present");
             } else if(Bukkit.getPluginManager().isPluginEnabled("LuckPerms")) {
-                useLuckPerms = true;
-                debug("Recovered from invalid config by enabling LuckPerms because plugin is present");
+                priorityOrder.add("LuckPerms");
+                debug("Recovered from invalid config by adding LuckPerms to priority list because plugin is present");
             } else {
                 plugin.getLogger().warning("Disabled plugin because neither LuckPerms nor Vault is enabled!");
                 Bukkit.getPluginManager().disablePlugin(plugin);
@@ -253,11 +253,6 @@ public class ConfigManager {
                 usePlaceholderAPI = false;
                 debug("PlaceholderAPI support disabled because the plugin was not found");
             }
-        }
-
-        if(!isEnabled) {
-            plugin.getLogger().warning("Disabled plugin!");
-            Bukkit.getPluginManager().disablePlugin(plugin);
         }
     }
 
@@ -278,5 +273,18 @@ public class ConfigManager {
         } catch (Exception ex) {
             plugin.getLogger().log(Level.WARNING, "[DEBUG] Failed to format debug message: " + format, ex);
         }
+    }
+
+    public ChatChannel resolveDefaultChannel() {
+        ChannelManager channelManager = plugin.getChannelManager();
+        String configuredName = defaultChannelName != null ? defaultChannelName : "global";
+
+        ChatChannel resolvedChannel = channelManager.getChannel(configuredName);
+        if (resolvedChannel == null) {
+            resolvedChannel = channelManager.getChannel("global");
+        }
+
+        defaultChannel = resolvedChannel;
+        return resolvedChannel;
     }
 }

@@ -26,6 +26,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * Runtime registry and executor for YoChat's chat pipeline.
+ *
+ * <p>This type is primarily used through {@link YoChatAPI}, but it is also exposed
+ * for integrations that need deeper access to the registered pipeline structure.</p>
+ */
 public class ChatPipelineManager {
     @Getter
     private static ChatPipelineManager instance;
@@ -41,10 +47,23 @@ public class ChatPipelineManager {
     private final Map<Stage, List<RegisteredPipelineStep>> pipelineSteps = new ConcurrentHashMap<>();
     private final AtomicLong registrationCounter = new AtomicLong();
 
+    /**
+     * Registers a step into the given stage using the step's default priority.
+     *
+     * @param stage the pipeline stage
+     * @param step the step to register
+     */
     public void registerStep(Stage stage, @NonNull ChatPipelineStep step) {
         registerStep(stage, step, step.getPriority());
     }
 
+    /**
+     * Registers a step into the given stage with an explicit priority.
+     *
+     * @param stage the pipeline stage
+     * @param step the step to register
+     * @param priority the explicit execution priority
+     */
     public void registerStep(Stage stage, @NonNull ChatPipelineStep step, int priority) {
         List<RegisteredPipelineStep> registeredSteps = pipelineSteps.computeIfAbsent(stage, key -> new CopyOnWriteArrayList<>());
         boolean alreadyRegistered = registeredSteps.stream().anyMatch(registered -> registered.step() == step);
@@ -71,22 +90,47 @@ public class ChatPipelineManager {
 
     public void execute(ChatContext context) {
         for (Stage stage : Stage.values()) {
-            List<RegisteredPipelineStep> steps = pipelineSteps.get(stage);
-            if (steps == null) continue;
+            execute(stage, context);
+            if (context.isCancelled()) return;
+        }
+    }
 
-            for (RegisteredPipelineStep step : steps) {
-                executeStep(step, context);
+    /**
+     * Executes a single pipeline stage against the given context.
+     *
+     * @param stage the stage to execute
+     * @param context the chat context to mutate
+     */
+    public void execute(Stage stage, ChatContext context) {
+        List<RegisteredPipelineStep> steps = pipelineSteps.get(stage);
+        if (steps == null) {
+            return;
+        }
 
-                if (context.isCancelled()) return;
+        for (RegisteredPipelineStep step : steps) {
+            executeStep(step, context);
+            if (context.isCancelled()) {
+                return;
             }
         }
     }
 
+    /**
+     * Returns the registered steps for a single stage.
+     *
+     * @param stage the stage to inspect
+     * @return an immutable snapshot of registered steps for that stage
+     */
     public List<RegisteredPipelineStep> getSteps(Stage stage) {
         List<RegisteredPipelineStep> steps = pipelineSteps.get(stage);
         return steps == null ? List.of() : List.copyOf(steps);
     }
 
+    /**
+     * Returns all registered pipeline steps grouped by stage.
+     *
+     * @return a snapshot of the internal registration map
+     */
     public Map<Stage, List<RegisteredPipelineStep>> getRegisteredSteps() {
         Map<Stage, List<RegisteredPipelineStep>> snapshot = new ConcurrentHashMap<>();
         for (Stage stage : Stage.values()) {
@@ -95,6 +139,11 @@ public class ChatPipelineManager {
         return snapshot;
     }
 
+    /**
+     * Returns only the raw step implementations grouped by stage.
+     *
+     * @return a snapshot of registered step implementations
+     */
     public Map<Stage, List<ChatPipelineStep>> getPipelineSteps() {
         Map<Stage, List<ChatPipelineStep>> snapshot = new ConcurrentHashMap<>();
         for (Stage stage : Stage.values()) {
@@ -105,6 +154,47 @@ public class ChatPipelineManager {
             snapshot.put(stage, List.copyOf(steps));
         }
         return snapshot;
+    }
+
+    /**
+     * Removes every step from the given stage.
+     *
+     * @param stage the stage to clear
+     */
+    public void clearSteps(Stage stage) {
+        List<RegisteredPipelineStep> steps = pipelineSteps.get(stage);
+        if (steps != null) {
+            steps.clear();
+        }
+    }
+
+    /**
+     * Removes every registered step from every stage.
+     */
+    public void clearAllSteps() {
+        pipelineSteps.values().forEach(List::clear);
+    }
+
+    /**
+     * Removes the given step instance from every stage where it is registered.
+     *
+     * @param step the step instance to remove
+     */
+    public void unregisterStep(ChatPipelineStep step) {
+        pipelineSteps.values().forEach(registeredList -> registeredList.removeIf(registered -> registered.step() == step));
+    }
+
+    /**
+     * Removes the given step instance from a single stage.
+     *
+     * @param stage the stage to remove from
+     * @param step the step instance to remove
+     */
+    public void unregisterStep(Stage stage, ChatPipelineStep step) {
+        List<RegisteredPipelineStep> steps = pipelineSteps.get(stage);
+        if (steps != null) {
+            steps.removeIf(registered -> registered.step() == step);
+        }
     }
 
     private void executeStep(RegisteredPipelineStep registeredStep, ChatContext context) {
@@ -154,6 +244,15 @@ public class ChatPipelineManager {
         registerStep(Stage.POST, new MentionStep(), 100);
     }
 
+    /**
+     * Immutable metadata for a single registered pipeline step.
+     *
+     * @param stage the stage the step belongs to
+     * @param step the actual step implementation
+     * @param priority the execution priority within the stage
+     * @param asyncSafe whether the step may run off the main thread
+     * @param registrationOrder the insertion order used as a tiebreaker
+     */
     public record RegisteredPipelineStep(
             Stage stage,
             ChatPipelineStep step,

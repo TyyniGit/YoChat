@@ -35,7 +35,7 @@ formatting:
   # - {message} for the chat message.
   # - {prefix} for the player's prefix
   # - {suffix} for the player's suffix
-  chat-format: "{prefix}{player}{suffix} <yellow><b>»</b></yellow> <reset>{message}"
+  chat-format: "{prefix} {player} {suffix} <yellow><b>»</b></yellow> <reset>{message}"
   # The format for channel messages.
   # Placeholders:
   # - {player} for the player's name
@@ -43,7 +43,7 @@ formatting:
   # - {prefix} for the player's prefix
   # - {suffix} for the player's suffix
   # - {channel} for the channel name
-  channel-format: "[{channel}] {prefix}{player}{suffix} <yellow><b>»</b></yellow> <reset>{message}"
+  channel-format: "[{channel}] {prefix} {player} {suffix} <yellow><b>»</b></yellow> <reset>{message}"
 
   # Channel-specific formatting overrides the chat format set in the "formatting" category and world-specific formatting
   channel-specific-formatting:
@@ -66,10 +66,14 @@ formatting:
 
 # Other settings
 additional:
-  # Either LuckPerms or vault has to be used or the plugin won't work
-  useLuckPerms: true
-  useVault: false
-  usePlaceholderAPI: true
+    # The order in which the plugins should be used for formatting
+    # Mostly for prefixes and suffixes
+    # Options: LuckPerms, Vault, YoChat
+    priority-order:
+     - LuckPerms
+     - Vault
+     - YoChat
+    usePlaceholderAPI: true
 
 # Moderation settings
 moderation:

@@ -23,15 +23,25 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
 
+/**
+ * Main plugin entry point and runtime service provider for YoChat.
+ *
+ * <p>This type is exposed through {@link YoChatAPI#getPlugin()} for integrations
+ * that need direct access to the running plugin instance.</p>
+ */
 public final class YoChat extends JavaPlugin implements YoChatProvider {
 
+    /** Parsed prefix component used in plugin-originated messages. */
     @Getter
     @Setter
     private Component YoChatPrefix;
+    /** Fallback legacy-format prefix used when the configured prefix is missing. */
     @Getter
     private final String alternativePrefix = "&#9863E7&lY&#9863E7&lo&#9863E7&lC&#9863E7&lh&#9863E7&la&#9863E7&lt #9863E7» ";
+    /** Primary neutral text color used by plugin messages. */
     @Getter
     private final TextColor mainColor = TextColor.fromHexString("#EBE7E4");
+    /** Accent color used by plugin messages. */
     @Getter
     private final TextColor highlightColor = TextColor.fromHexString("#9863E7");
 
@@ -43,6 +53,8 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
     private ChatPipelineManager chatPipelineManager;
     @Getter
     private Discord discord;
+    private PrefixManager prefixManager;
+    private SuffixManager suffixManager;
 
     @Override
     public void onLoad() {
@@ -53,9 +65,6 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
 
     @Override
     public void onEnable() {
-        getLogger().info("Enabling YoChat");
-        YoChatAPI.setProvider(this);
-
         try {
             ConfigUpdater.update(this, "config.yml", new File(getDataFolder(), "config.yml"));
         } catch (IOException e) {
@@ -64,14 +73,34 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
 
         reloadConfig();
 
-        initializeManagers();
+        configManager = new ConfigManager(this);
+        channelManager = new ChannelManager(this);
+        messageParseManager = new MessageParseManager();
 
         messageParseManager.setupMM();
+
+        YoChatAPI.setProvider(this);
+
         channelManager.loadChannels();
         configManager.load();
+
+        if (!configManager.isEnabled()) {
+            getLogger().info("YoChat is disabled in config. Plugin loaded but not active.");
+            return;
+        }
+
+        chatManager = new ChatManager(this);
+        muteManager = new MuteManager(this);
+        discord = new Discord();
+        chatPipelineManager = new ChatPipelineManager();
+        prefixManager = new PrefixManager(this);
+        suffixManager = new SuffixManager(this);
+
         muteManager.load();
         muteManager.startMuteChecker();
         chatManager.reloadBlockedWords();
+        prefixManager.load();
+        suffixManager.load();
         configManager.debug("Core managers initialized and runtime state loaded");
 
         registerEvents();
@@ -85,27 +114,27 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
     @Override
     public void onDisable() {
         debug("Starting plugin shutdown");
-        for(ChatChannel channel : channelManager.getChannels()) {
-            for(Player player : channel.getMembers()) {
-                channel.removeMember(player);
+        if (channelManager != null) {
+            for(ChatChannel channel : channelManager.getChannels()) {
+                for(Player player : channel.getMembers()) {
+                    channel.removeMember(player);
+                }
             }
+            channelManager.saveChannels();
         }
-
-        channelManager.saveChannels();
-        muteManager.save();
+        if (muteManager != null) {
+            muteManager.stopMuteChecker();
+            muteManager.save();
+        }
+        if (prefixManager != null) {
+            prefixManager.save();
+        }
+        if (suffixManager != null) {
+            suffixManager.save();
+        }
         debug("Plugin shutdown completed");
     }
 
-    private void initializeManagers() {
-        this.messageParseManager = new MessageParseManager();
-        this.configManager = new ConfigManager(this);
-        this.chatManager = new ChatManager(this);
-        this.channelManager = new ChannelManager(this);
-        this.muteManager = new MuteManager(this);
-        this.discord = new Discord();
-        this.chatPipelineManager = new ChatPipelineManager();
-        debug("Managers instantiated");
-    }
 
     private void registerEvents() {
         getServer().getPluginManager().registerEvents(new ChatListener(), this);
@@ -134,25 +163,70 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
         return this;
     }
 
+    /**
+     * Returns the active chat manager.
+     *
+     * @return the chat manager
+     */
     @Override
     public ChatManager getChatManager() {
         return chatManager;
     }
 
+    /**
+     * Returns the active channel manager.
+     *
+     * @return the channel manager
+     */
     @Override
     public ChannelManager getChannelManager() {
         return channelManager;
     }
 
+    /**
+     * Returns the active mute manager.
+     *
+     * @return the mute manager
+     */
     @Override
     public MuteManager getMuteManager() {return muteManager;}
 
+    /**
+     * Returns the active message parse manager.
+     *
+     * @return the message parse manager
+     */
     @Override
     public MessageParseManager getMessageParseManager() {return messageParseManager;}
 
+    /**
+     * Returns the active chat pipeline manager.
+     *
+     * @return the chat pipeline manager
+     */
     @Override
     public ChatPipelineManager getChatPipelineManager() {
         return chatPipelineManager;
+    }
+
+    /**
+     * Returns the active suffix manager.
+     *
+     * @return the suffix manager
+     */
+    @Override
+    public SuffixManager getSuffixManager() {
+        return suffixManager;
+    }
+
+    /**
+     * Returns the active prefix manager.
+     *
+     * @return the prefix manager
+     */
+    @Override
+    public PrefixManager getPrefixManager() {
+        return prefixManager;
     }
 
     private void debug(String message) {

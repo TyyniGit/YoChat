@@ -9,6 +9,7 @@ import me.tyyni.yoChat.yoChatAPI.YoChatAPI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextReplacementConfig;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.model.user.User;
@@ -24,6 +25,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -39,6 +41,16 @@ public class ChatManager {
     private Pattern blockedPattern;
     private final ConfigManager config = ConfigManager.getInstance();
     private final MessageParseManager mpm = YoChatAPI.getPlugin().getMessageParseManager();
+    private static final String PREFIX_TAG = "yochat_prefix";
+    private static final String SUFFIX_TAG = "yochat_suffix";
+    private static final String PLAYER_TAG = "yochat_player";
+    private static final String CHANNEL_TAG = "yochat_channel";
+    private static final String MESSAGE_TAG = "yochat_message";
+    private static final String MENTIONER_PREFIX_TAG = "yochat_mentioner_prefix";
+    private static final String MENTIONER_SUFFIX_TAG = "yochat_mentioner_suffix";
+    private static final String MENTIONER_NAME_TAG = "yochat_mentioner_name";
+    private static final String MESSAGE_PLACEHOLDER = "{message}";
+    private static final List<String> FLOWING_HEADER_PLACEHOLDERS = List.of("{channel}", "{prefix}", "{player}", "{suffix}");
 
     public ChatManager(YoChat plugin) {
         if (setupChat()) {
@@ -65,36 +77,17 @@ public class ChatManager {
         return true;
     }
 
-    private String processFormat(String format, @Nullable Player player, Map<String, String> placeholders) {
+    private PreparedFormat processFormat(String format, @Nullable Player player, Map<String, String> placeholders) {
         String finalLine = format;
 
-        String prefix = "";
-        String suffix = "";
-        String name = (player != null) ? player.getName() : "Unknown";
+        PlayerFormatValues playerValues = resolvePlayerFormatValues(player);
+        String prefix = playerValues.prefix();
+        String suffix = playerValues.suffix();
+        String name = playerValues.name();
 
-        if (player != null) {
-            if (config.isUseLuckPerms()) {
-                prefix = getLuckPermsPrefix(player);
-                suffix = getLuckPermsSuffix(player);
-                config.debug("LuckPerms meta for %s -> prefix='%s', suffix='%s'", player.getName(), prefix, suffix);
-            }
-
-            if (config.isUseVault() && (prefix.isEmpty() || suffix.isEmpty())) {
-                if (vaultChat != null) {
-                    if (prefix.isEmpty()) prefix = vaultChat.getPlayerPrefix(player);
-                    if (suffix.isEmpty()) suffix = vaultChat.getPlayerSuffix(player);
-                    config.debug("Vault meta fallback for %s -> prefix='%s', suffix='%s'", player.getName(), prefix, suffix);
-                }
-            }
-
-            if (prefix.isEmpty() && suffix.isEmpty()) {
-                config.debug("No prefix or suffix found for player %s", player.getName());
-            }
-        }
-
-        finalLine = finalLine.replace("{prefix}", prefix)
-                .replace("{suffix}", suffix)
-                .replace("{player}", name);
+        finalLine = finalLine.replace("{prefix}", "<" + PREFIX_TAG + ">")
+                .replace("{suffix}", "<" + SUFFIX_TAG + ">")
+                .replace("{player}", "<" + PLAYER_TAG + ">");
 
         if (placeholders != null) {
             for (Map.Entry<String, String> entry : placeholders.entrySet()) {
@@ -110,13 +103,21 @@ public class ChatManager {
         config.debug("Processed format for player=%s template='%s' result='%s'",
                 player != null ? player.getName() : "null", format, finalLine);
 
-        return finalLine;
+        TagResolver resolver = TagResolver.builder()
+                .resolver(Placeholder.component(PREFIX_TAG, mpm.parseAdmin(prefix)))
+                .resolver(Placeholder.component(SUFFIX_TAG, mpm.parseAdmin(suffix)))
+                .resolver(Placeholder.component(PLAYER_TAG, Component.text(name)))
+                .build();
+
+        return new PreparedFormat(finalLine, resolver);
+    }
+
+    private boolean isValid(String str) {
+        return str != null && !str.isEmpty();
     }
 
     public Component formatMessage(Player sender, Component message) {
-        String formatted = processFormat(config.getChatFormat(), sender, Map.of("{message}", "<msg>"));
-
-        return mpm.parseAdmin(formatted, Placeholder.component("msg", message));
+        return formatStructuredChatMessage(config.getChatFormat(), sender, null, message);
     }
 
     public Component formatChannelFormat(ChatChannel channel) {
@@ -125,45 +126,47 @@ public class ChatManager {
 
     public Component formatChannelMessage(ChatChannel channel, Player sender, Component message) {
         String format = (channel.getFormat() != null && !channel.getFormat().isEmpty()) ? channel.getFormat() : config.getChannelFormat();
-
-        Map<String, String> placeholders = Map.of(
-                "{channel}", channel.getName(),
-                "{message}", "<msg>"
-        );
-
-        String processedFormat = processFormat(format, sender, placeholders);
-
-        return mpm.parseAdmin(processedFormat, Placeholder.component("msg", message));
+        return formatStructuredChatMessage(format, sender, channel.getName(), message);
     }
 
     public Component formatMessage(String format, Player sender, String blockedword) {
-        return mpm.parseAdmin(processFormat(format, sender, Map.of("{blockedword}", blockedword)));
+        PreparedFormat prepared = processFormat(format, sender, Map.of("{blockedword}", blockedword));
+        return mpm.parseAdmin(prepared.template(), prepared.resolver());
     }
 
     public Component formatMention(String format, Player receiver, Player mentioner) {
         String mentionerprefix = "";
         String mentionersuffix = "";
 
-        if (config.isUseLuckPerms()) {
+        if (config.getPriorityOrder().contains("LuckPerms")) {
             mentionerprefix = getLuckPermsPrefix(mentioner);
             mentionersuffix = getLuckPermsSuffix(mentioner);
         }
 
-        if (config.isUseVault() && (mentionerprefix.isEmpty() || mentionersuffix.isEmpty())) {
+        if (config.getPriorityOrder().contains("Vault") && (mentionerprefix.isEmpty() || mentionersuffix.isEmpty())) {
             if (vaultChat != null) {
                 if (mentionerprefix.isEmpty()) mentionerprefix = vaultChat.getPlayerPrefix(mentioner);
                 if (mentionersuffix.isEmpty()) mentionersuffix = vaultChat.getPlayerSuffix(mentioner);
             }
         }
 
-        Map<String, String> placeholders = Map.of(
-                "{name}", receiver.getName(),
-                "{mentionername}", mentioner.getName(),
-                "{mentionersuffix}", mentionersuffix,
-                "{mentionerprefix}", mentionerprefix
-        );
+        if (config.isUsePlaceholderAPI() && Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            mentionerprefix = PlaceholderAPI.setPlaceholders(mentioner, mentionerprefix);
+            mentionersuffix = PlaceholderAPI.setPlaceholders(mentioner, mentionersuffix);
+        }
 
-        return mpm.parseAdmin(processFormat(format, receiver, placeholders));
+        PreparedFormat prepared = processFormat(format, receiver, Map.of(
+                "{name}", receiver.getName(),
+                "{mentionername}", "<" + MENTIONER_NAME_TAG + ">",
+                "{mentionersuffix}", "<" + MENTIONER_SUFFIX_TAG + ">",
+                "{mentionerprefix}", "<" + MENTIONER_PREFIX_TAG + ">"
+        ));
+
+        return mpm.parseAdmin(prepared.template(),
+                prepared.resolver(),
+                Placeholder.component(MENTIONER_NAME_TAG, Component.text(mentioner.getName())),
+                Placeholder.component(MENTIONER_PREFIX_TAG, mpm.parseAdmin(mentionerprefix)),
+                Placeholder.component(MENTIONER_SUFFIX_TAG, mpm.parseAdmin(mentionersuffix)));
     }
 
     public Component formatMuteMessage(String format, Player sender) {
@@ -178,7 +181,8 @@ public class ChatManager {
                     "{timeleft}", getRemainingTime(mp.whenStarted(), mp.getDuration())
             );
         }
-        return mpm.parseAdmin(processFormat(format, sender, placeholders));
+        PreparedFormat prepared = processFormat(format, sender, placeholders);
+        return mpm.parseAdmin(prepared.template(), prepared.resolver());
     }
 
     public Component formatYouGotMutedMessage(String format, String punisher, OfflinePlayer target, String duration, @Nullable String reason) {
@@ -187,7 +191,8 @@ public class ChatManager {
                 "{duration}", duration,
                 "{punisher}", punisher
         );
-        return mpm.parseAdmin(processFormat(format, target.getPlayer(), placeholders));
+        PreparedFormat prepared = processFormat(format, target.getPlayer(), placeholders);
+        return mpm.parseAdmin(prepared.template(), prepared.resolver());
     }
 
     public Component formatYouGotUnmutedMessage(String format, String pardoner, OfflinePlayer target, @Nullable String reason) {
@@ -195,11 +200,154 @@ public class ChatManager {
                 "{reason}", reason != null ? reason : "No reason",
                 "{pardoner}", pardoner
         );
-        return mpm.parseAdmin(processFormat(format, target.getPlayer(), placeholders));
+        PreparedFormat prepared = processFormat(format, target.getPlayer(), placeholders);
+        return mpm.parseAdmin(prepared.template(), prepared.resolver());
     }
 
     public Component formatTimeEndedMessage(String format, Player player) {
-        return mpm.parseAdmin(processFormat(format, player, Map.of()));
+        PreparedFormat prepared = processFormat(format, player, Map.of());
+        return mpm.parseAdmin(prepared.template(), prepared.resolver());
+    }
+
+    private Component formatStructuredChatMessage(String format, Player sender, @Nullable String channelName, Component message) {
+        StructuredMessageFormat structuredFormat = splitStructuredMessageFormat(format);
+        if (structuredFormat == null) {
+            Map<String, String> placeholders = channelName == null
+                    ? Map.of(MESSAGE_PLACEHOLDER, "<" + MESSAGE_TAG + ">")
+                    : Map.of(
+                    "{channel}", "<" + CHANNEL_TAG + ">",
+                    MESSAGE_PLACEHOLDER, "<" + MESSAGE_TAG + ">"
+            );
+
+            PreparedFormat prepared = processFormat(format, sender, placeholders);
+            TagResolver.Builder resolverBuilder = TagResolver.builder()
+                    .resolver(prepared.resolver())
+                    .resolver(Placeholder.component(MESSAGE_TAG, message));
+
+            if (channelName != null) {
+                resolverBuilder.resolver(Placeholder.component(CHANNEL_TAG, Component.text(channelName)));
+            }
+
+            return mpm.parseAdmin(prepared.template(), resolverBuilder.build());
+        }
+
+        Map<String, String> rawValues = buildRawFormatValues(sender, channelName);
+        Component rendered = Component.empty();
+
+        if (!structuredFormat.headerTemplate().isEmpty()) {
+            rendered = rendered.append(mpm.parseAdmin(applyRawFormatValues(structuredFormat.headerTemplate(), sender, rawValues)));
+        }
+        if (!structuredFormat.separatorTemplate().isEmpty()) {
+            rendered = rendered.append(mpm.parseAdmin(applyRawFormatValues(structuredFormat.separatorTemplate(), sender, rawValues)));
+        }
+
+        rendered = rendered.append(message);
+
+        if (!structuredFormat.tailTemplate().isEmpty()) {
+            rendered = rendered.append(mpm.parseAdmin(applyRawFormatValues(structuredFormat.tailTemplate(), sender, rawValues)));
+        }
+
+        return rendered;
+    }
+
+    private @Nullable StructuredMessageFormat splitStructuredMessageFormat(String format) {
+        int messageIndex = format.indexOf(MESSAGE_PLACEHOLDER);
+        if (messageIndex < 0) {
+            return null;
+        }
+
+        int lastPlaceholderIndex = -1;
+        String lastPlaceholder = null;
+        for (String candidate : FLOWING_HEADER_PLACEHOLDERS) {
+            int candidateIndex = format.lastIndexOf(candidate, messageIndex - 1);
+            if (candidateIndex > lastPlaceholderIndex) {
+                lastPlaceholderIndex = candidateIndex;
+                lastPlaceholder = candidate;
+            }
+        }
+
+        if (lastPlaceholderIndex < 0) {
+            return null;
+        }
+
+        int headerEnd = lastPlaceholderIndex + lastPlaceholder.length();
+        return new StructuredMessageFormat(
+                format.substring(0, headerEnd),
+                format.substring(headerEnd, messageIndex),
+                format.substring(messageIndex + MESSAGE_PLACEHOLDER.length())
+        );
+    }
+
+    private Map<String, String> buildRawFormatValues(@Nullable Player player, @Nullable String channelName) {
+        PlayerFormatValues playerValues = resolvePlayerFormatValues(player);
+        Map<String, String> rawValues = new HashMap<>();
+        rawValues.put("{prefix}", playerValues.prefix());
+        rawValues.put("{suffix}", playerValues.suffix());
+        rawValues.put("{player}", playerValues.name());
+        if (channelName != null) {
+            rawValues.put("{channel}", channelName);
+        }
+        return rawValues;
+    }
+
+    private String applyRawFormatValues(String input, @Nullable Player player, Map<String, String> rawValues) {
+        String resolved = input;
+        for (Map.Entry<String, String> entry : rawValues.entrySet()) {
+            resolved = resolved.replace(entry.getKey(), entry.getValue());
+        }
+
+        if (player != null && config.isUsePlaceholderAPI() && Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            resolved = PlaceholderAPI.setPlaceholders(player, resolved);
+        }
+
+        return resolved;
+    }
+
+    private PlayerFormatValues resolvePlayerFormatValues(@Nullable Player player) {
+        String prefix = "";
+        String suffix = "";
+        String name = (player != null) ? player.getName() : "Unknown";
+
+        if (player != null) {
+            for (String provider : config.getPriorityOrder()) {
+                String foundPrefix = "";
+                String foundSuffix = "";
+
+                switch (provider.toUpperCase()) {
+                    case "LUCKPERMS":
+                        if (config.getPriorityOrder().contains("LuckPerms")) {
+                            foundPrefix = getLuckPermsPrefix(player);
+                            foundSuffix = getLuckPermsSuffix(player);
+                        }
+                        break;
+                    case "VAULT":
+                        if (config.getPriorityOrder().contains("Vault") && vaultChat != null) {
+                            foundPrefix = vaultChat.getPlayerPrefix(player);
+                            foundSuffix = vaultChat.getPlayerSuffix(player);
+                        }
+                        break;
+                    case "YOCHAT":
+                        foundPrefix = YoChatAPI.getPrefix(player);
+                        foundSuffix = YoChatAPI.getSuffix(player);
+                        break;
+                }
+
+                if (isValid(foundPrefix) || isValid(foundSuffix)) {
+                    prefix = (foundPrefix != null) ? foundPrefix : "";
+                    suffix = (foundSuffix != null) ? foundSuffix : "";
+                    config.debug("Meta found via %s for %s", provider, player.getName());
+                    break;
+                }
+            }
+        }
+
+        if (player != null && config.isUsePlaceholderAPI() && Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            prefix = PlaceholderAPI.setPlaceholders(player, prefix);
+            suffix = PlaceholderAPI.setPlaceholders(player, suffix);
+            name = PlaceholderAPI.setPlaceholders(player, name);
+        }
+
+        return new PlayerFormatValues(prefix, suffix, name);
     }
 
     public void broadcast(Component message, Player sender) {
@@ -313,6 +461,15 @@ public class ChatManager {
 
     public boolean containsName(Player player, String text) {
         return text.toLowerCase(Locale.ROOT).contains(player.getName().toLowerCase(Locale.ROOT));
+    }
+
+    private record PreparedFormat(String template, TagResolver resolver) {
+    }
+
+    private record StructuredMessageFormat(String headerTemplate, String separatorTemplate, String tailTemplate) {
+    }
+
+    private record PlayerFormatValues(String prefix, String suffix, String name) {
     }
 
 }

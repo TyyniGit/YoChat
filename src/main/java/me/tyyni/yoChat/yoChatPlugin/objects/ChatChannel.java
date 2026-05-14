@@ -52,7 +52,7 @@ public class ChatChannel {
     @Nullable
     Set<String> worlds;
 
-    /** The custom chat format for this channel. If null, the default format is used. */
+    /** The custom chat format for this channel. If {@code null}, the default format is used. */
     @Getter
     @Setter
     @Nullable
@@ -61,10 +61,10 @@ public class ChatChannel {
     /**
      * Constructs a new ChatChannel.
      *
-     * @param name        The name of the channel.
-     * @param radius      The chat broadcast radius.
-     * @param strictWorld Whether world restriction is active.
-     * @param worlds      The allowed worlds (can be null).
+     * @param name the name of the channel
+     * @param radius the chat broadcast radius
+     * @param strictWorld whether world restriction is active
+     * @param worlds the allowed worlds, or {@code null} when unrestricted
      */
     public ChatChannel(String name, int radius, boolean strictWorld, @Nullable Set<String> worlds) {
         this.name = name;
@@ -76,8 +76,8 @@ public class ChatChannel {
     /**
      * Checks if a player has the necessary permissions to join this channel.
      *
-     * @param player The player to check.
-     * @return true if the player has the required permission or if no permission is set.
+     * @param player the player to check
+     * @return {@code true} if the player may use the channel, otherwise {@code false}
      */
     public boolean canJoin(Player player) {
         boolean allowed = permission == null || player.hasPermission(permission);
@@ -90,7 +90,7 @@ public class ChatChannel {
     /**
      * Adds a player to the channel's member list.
      *
-     * @param player The player to add.
+     * @param player the player to add
      */
     public void addMember(Player player) {
         members.add(player);
@@ -100,7 +100,7 @@ public class ChatChannel {
     /**
      * Removes a player from the channel's member list.
      *
-     * @param player The player to remove.
+     * @param player the player to remove
      */
     public void removeMember(Player player) {
         members.remove(player);
@@ -110,8 +110,8 @@ public class ChatChannel {
     /**
      * Checks if a player is currently a member of this channel.
      *
-     * @param player The player to check.
-     * @return true if the player is a member.
+     * @param player the player to check
+     * @return {@code true} if the player is currently a member of the channel
      */
     public boolean isMember(Player player) {
         return members.contains(player);
@@ -119,7 +119,8 @@ public class ChatChannel {
 
     /**
      * Adds a world to the channel's world list.
-     * @param worldName - The world to add.
+     *
+     * @param worldName the world name to add
      */
     public void addWorld(String worldName) {
         if (worlds != null) {
@@ -133,7 +134,7 @@ public class ChatChannel {
     /**
      * Removes a world from the channel's world list.
      *
-     * @param worldName The world to remove.
+     * @param worldName the world name to remove
      */
     public void removeWorld(String worldName) {
         if (worlds != null) {
@@ -146,8 +147,8 @@ public class ChatChannel {
     /**
      * Checks if the world list contains a world.
      *
-     * @param worldName The world to check.
-     * @return true if the list contains the world.
+     * @param worldName the world name to check
+     * @return {@code true} if the world is allowed in this channel
      */
     public boolean hasWorld(String worldName) {
         if (worlds != null) {

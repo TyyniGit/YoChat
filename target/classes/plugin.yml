@@ -1,7 +1,7 @@
 name: YoChat
 description: "The new best free chat plugin for Minecraft servers"
 prefix: YoChat
-version: '1.1.0'
+version: '1.2.0'
 
 main: me.tyyni.yoChat.yoChatPlugin.YoChat
 api-version: '1.21.11'
@@ -58,6 +58,8 @@ permissions:
                 description: Permission for the mute command.
               yochat.commands.unmute:
                 description: Permission for the unmute command.
+              yochat.commands.player:
+                description: Permission for the player command.
 
           yochat.tabcomplete:
                 description: Permission for tab completing in the commands of YoChat.

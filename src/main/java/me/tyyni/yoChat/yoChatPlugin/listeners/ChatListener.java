@@ -37,6 +37,11 @@ public class ChatListener implements Listener {
                 ? YoChatAPI.getPlugin().getChannelManager().getChannelByPlayer(player)
                 : null;
 
+        if(!config.isEnabled()) {
+            config.debug("YoChat is disabled. Ignoring chat from %s in world=%s: '%s'", player.getName(), player.getWorld().getName(), plainText);
+            return;
+        }
+
         config.debug("Incoming chat from %s in world=%s: '%s'", player.getName(), player.getWorld().getName(), plainText);
 
         ChatContext context = new ChatContext();

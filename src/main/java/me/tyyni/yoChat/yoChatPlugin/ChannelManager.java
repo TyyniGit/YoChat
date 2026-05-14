@@ -99,6 +99,19 @@ public class ChannelManager {
         }
     }
 
+    public void renameChannel(String oldName, String newName) {
+        ChatChannel channel = channels.remove(oldName.toLowerCase(Locale.ROOT));
+        if (channel == null) {
+            return;
+        }
+
+        channel.setName(newName);
+        channels.put(newName.toLowerCase(Locale.ROOT), channel);
+        if (ConfigManager.getInstance() != null) {
+            ConfigManager.getInstance().debug("Renamed channel %s to %s", oldName, newName);
+        }
+    }
+
     public ChatChannel getChannelByPlayer(Player player) {
         for (ChatChannel channel : getChannels()) {
             if (channel.getMembers().contains(player)) {
@@ -110,10 +123,8 @@ public class ChannelManager {
     }
 
     public void saveChannels() {
-        ConfigurationSection section = config.getConfigurationSection("channels");
-        if(section == null) {
-            section = config.createSection("channels");
-        }
+        config.set("channels", null);
+        ConfigurationSection section = config.createSection("channels");
 
         for(Map.Entry<String, ChatChannel> entry : channels.entrySet()) {
             String key = entry.getKey();
