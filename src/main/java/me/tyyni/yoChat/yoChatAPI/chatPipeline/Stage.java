@@ -5,17 +5,17 @@ package me.tyyni.yoChat.yoChatAPI.chatPipeline;
  */
 public enum Stage {
     /** Validation and early cancellation, such as mute checks. */
-    PRE,          // mute, cancel, validation
+    PRE,
     /** Raw message mutation, filtering and similar transformations. */
-    PROCESS,      // filter, caps, edit message
+    PROCESS,
     /** Placeholder resolution for message content. */
-    PLACEHOLDER,  // PlaceholderAPI
+    PLACEHOLDER,
     /** Channel selection and channel-related routing decisions. */
-    CHANNEL,      // determine channel
+    CHANNEL,
     /** Viewer selection and recipient filtering. */
-    VIEWERS,      // determine recipients
+    VIEWERS,
     /** Final message formatting and component creation. */
-    FORMAT,       // prefix/suffix, MiniMessage
+    FORMAT,
     /** Post-processing effects such as mentions or sounds. */
-    POST          // mentions, sounds, extra effects
+    POST
 }

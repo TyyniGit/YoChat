@@ -151,7 +151,8 @@ public class ChannelManager {
 
         register(createChannel("global", -1, false, null));
 
-        ConfigurationSection section = config.getConfigurationSection("channels");
+        FileConfiguration currentConfig = YamlConfiguration.loadConfiguration(file);
+        ConfigurationSection section = currentConfig.getConfigurationSection("channels");
         if (section == null) return;
 
         for (String key : section.getKeys(false)) {

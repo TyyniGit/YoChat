@@ -120,18 +120,27 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
                     channel.removeMember(player);
                 }
             }
+
             channelManager.saveChannels();
         }
+
         if (muteManager != null) {
             muteManager.stopMuteChecker();
             muteManager.save();
         }
+
         if (prefixManager != null) {
             prefixManager.save();
         }
+
         if (suffixManager != null) {
             suffixManager.save();
         }
+
+        if (muteManager != null) {
+            muteManager.save();
+        }
+
         debug("Plugin shutdown completed");
     }
 

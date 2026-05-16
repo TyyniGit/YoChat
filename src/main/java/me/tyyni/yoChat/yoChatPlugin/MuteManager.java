@@ -72,7 +72,8 @@ public class MuteManager {
     public void load() {
         mutedPlayers.clear();
 
-        ConfigurationSection section = config.getConfigurationSection("mutedplayers");
+        YamlConfiguration currentConfig = YamlConfiguration.loadConfiguration(file);
+        ConfigurationSection section = currentConfig.getConfigurationSection("mutedplayers");
         if (section == null) {
             ConfigManager.getInstance().debug("No muted players section found in mutedplayers.yml");
             return;

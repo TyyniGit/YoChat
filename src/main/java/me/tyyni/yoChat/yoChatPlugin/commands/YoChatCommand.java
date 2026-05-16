@@ -230,7 +230,11 @@ public class YoChatCommand implements TabExecutor {
             ConfigUpdater.update(plugin, "config.yml", new File(plugin.getDataFolder(), "config.yml"));
             configManager.load();
             api.getChatManager().reloadBlockedWords();
+            api.getChannelManager().loadChannels();
+            api.getPrefixManager().load();
+            api.getSuffixManager().load();
             api.getMessageParseManager().setupMM();
+            api.getMuteManager().load();
             api.getMuteManager().startMuteChecker();
             debug("Reload completed: muteIntervalTicks=%d", api.getMuteManager().getInterval());
         } catch (IOException e) {
