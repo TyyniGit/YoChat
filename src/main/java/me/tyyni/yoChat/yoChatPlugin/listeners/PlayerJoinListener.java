@@ -8,13 +8,14 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.jspecify.annotations.NonNull;
 
 public class PlayerJoinListener implements Listener {
     private static final int MAX_AUTO_JOIN_ATTEMPTS = 5;
     private static final long AUTO_JOIN_RETRY_DELAY_TICKS = 10L;
 
     @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
+    public void onPlayerJoin(@NonNull PlayerJoinEvent event) {
         Player player = event.getPlayer();
         ConfigManager config = ConfigManager.getInstance();
         if (!config.isUseChannelSystem()) {

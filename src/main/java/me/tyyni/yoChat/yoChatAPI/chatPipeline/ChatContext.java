@@ -15,7 +15,7 @@ import java.util.Set;
  * Mutable state for a single chat message as it moves through YoChat's pipeline.
  *
  * <p>Pipeline steps and API consumers may read and update this object to alter
- * how a message is validated, formatted and delivered.</p>
+ * how a message is validated, formatted, and delivered.</p>
  */
 public class ChatContext {
     /** The player who sent the message. */

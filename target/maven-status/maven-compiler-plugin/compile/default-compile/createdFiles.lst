@@ -1,10 +1,13 @@
+me\tyyni\yoChat\yoChatPlugin\ReplyManager.class
 me\tyyni\yoChat\yoChatPlugin\steps\FormatStep.class
 me\tyyni\yoChat\yoChatAPI\YoChatAPI.class
 me\tyyni\yoChat\yoChatPlugin\webhook\WebhookPayload$Field$FieldBuilder.class
 me\tyyni\yoChat\yoChatPlugin\steps\MentionStep.class
 me\tyyni\yoChat\yoChatPlugin\steps\ViewerStep.class
 me\tyyni\yoChat\yoChatPlugin\webhook\WebhookPayload$WebhookPayloadBuilder.class
+me\tyyni\yoChat\yoChatPlugin\steps\ReplyStep.class
 me\tyyni\yoChat\yoChatPlugin\webhook\WebhookPayload$Author.class
+me\tyyni\yoChat\yoChatPlugin\listeners\ReplyCommandListener.class
 me\tyyni\yoChat\yoChatPlugin\SuffixManager.class
 me\tyyni\yoChat\yoChatPlugin\ConfigManager.class
 me\tyyni\yoChat\yoChatPlugin\steps\FinalizeStep.class
@@ -23,6 +26,7 @@ me\tyyni\yoChat\yoChatAPI\events\YoChatChannelJoinEvent.class
 me\tyyni\yoChat\yoChatPlugin\webhook\WebhookPayload$Embed.class
 me\tyyni\yoChat\yoChatPlugin\MessageParseManager.class
 me\tyyni\yoChat\yoChatPlugin\MuteManager.class
+me\tyyni\yoChat\yoChatPlugin\steps\ReplyMarkerStep.class
 me\tyyni\yoChat\yoChatAPI\interfaces\YoChatProvider.class
 me\tyyni\yoChat\yoChatPlugin\ChatManager$StructuredMessageFormat.class
 me\tyyni\yoChat\yoChatPlugin\ChatManager$PreparedFormat.class

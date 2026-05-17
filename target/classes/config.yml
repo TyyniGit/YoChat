@@ -10,7 +10,7 @@ general:
   # The prefix that will be displayed before chat messages from this plugin. You can use color codes and formatting here.
   # Preferred to use the default prefix for better aesthetics, but you can customize it as needed.
   # (Default: <b><gradient:#9863E7:#9863E7>YoChat</gradient></b> )
-  chat-prefix: "<b><gradient:#9863E7:#9863E7>YoChat »</gradient></b> "
+  chat-prefix: "<b><#9863E7>YoChat »</b> "
 
   # Debug mode for logging additional information to the console
   debug: false
@@ -220,3 +220,28 @@ mentioning:
   # Use decimals
   volume: 1.0
   pitch: 1.0
+
+replying:
+    # Whether the reply system should be used
+    enabled: true
+
+    # Whether the reply system should show the replies to everyone or only to the sender and the receiver of the message
+    public-replies: true
+
+    # The message that will be sent to the player when they reply to someone
+    reply-button-icon: "⮢"
+
+    # The icon before the message when replying to someone
+    reply-icon: "⮡"
+
+    # The length that the message has to be to get cut off when replying
+    # Example: If the message is "Hello, how are you doing?" and the max length is 10, the message will look like "Hello, how..." in the reply
+    max-reply-length: 20
+
+    # The hover text that will be shown when hovering over the reply button
+    # Placeholders:
+    # - {player} for the player's name
+    # - {prefix} for the player's prefix
+    # - {suffix} for the player's suffix
+    # - {message} for the message that was sent
+    reply-hover-text: "<yellow>Click to reply to {player}</yellow>"

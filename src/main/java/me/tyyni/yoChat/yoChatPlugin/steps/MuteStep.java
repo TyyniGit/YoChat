@@ -8,11 +8,12 @@ import me.tyyni.yoChat.yoChatPlugin.ConfigManager;
 import me.tyyni.yoChat.yoChatPlugin.MuteManager;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
+import org.jspecify.annotations.NonNull;
 
 public class MuteStep implements ChatPipelineStep {
 
     @Override
-    public void process(ChatContext context) {
+    public void process(@NonNull ChatContext context) {
         Player player = context.getSender();
         ChatManager chatManager = YoChatAPI.getPlugin().getChatManager();
 

@@ -7,6 +7,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.UnknownNullability;
+import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 import java.util.Map;
@@ -20,7 +21,7 @@ public class SuffixManager {
     @Getter
     private final Map<UUID, String> suffixes = new ConcurrentHashMap<>();
 
-    public SuffixManager(YoChat plugin) {
+    public SuffixManager(@NonNull YoChat plugin) {
         this.plugin = plugin;
         this.file = new File(plugin.getDataFolder(), "players.yml");
         if (!file.exists()) {

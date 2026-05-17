@@ -18,7 +18,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -77,7 +79,8 @@ public class ChatManager {
         return true;
     }
 
-    private PreparedFormat processFormat(String format, @Nullable Player player, Map<String, String> placeholders) {
+    @Contract("_, _, _ -> new")
+    private @NonNull PreparedFormat processFormat(String format, @Nullable Player player, Map<String, String> placeholders) {
         String finalLine = format;
 
         PlayerFormatValues playerValues = resolvePlayerFormatValues(player);
@@ -120,11 +123,11 @@ public class ChatManager {
         return formatStructuredChatMessage(config.getChatFormat(), sender, null, message);
     }
 
-    public Component formatChannelFormat(ChatChannel channel) {
+    public Component formatChannelFormat(@NonNull ChatChannel channel) {
         return mpm.parseAdmin(channel.getFormat());
     }
 
-    public Component formatChannelMessage(ChatChannel channel, Player sender, Component message) {
+    public Component formatChannelMessage(@NonNull ChatChannel channel, Player sender, Component message) {
         String format = (channel.getFormat() != null && !channel.getFormat().isEmpty()) ? channel.getFormat() : config.getChannelFormat();
         return formatStructuredChatMessage(format, sender, channel.getName(), message);
     }
@@ -169,7 +172,7 @@ public class ChatManager {
                 Placeholder.component(MENTIONER_SUFFIX_TAG, mpm.parseAdmin(mentionersuffix)));
     }
 
-    public Component formatMuteMessage(String format, Player sender) {
+    public Component formatMuteMessage(String format, @NonNull Player sender) {
         MutedPlayer mp = YoChatAPI.getMutedPlayer(sender.getUniqueId());
         Map<String, String> placeholders = null;
         if (mp != null) {
@@ -185,7 +188,7 @@ public class ChatManager {
         return mpm.parseAdmin(prepared.template(), prepared.resolver());
     }
 
-    public Component formatYouGotMutedMessage(String format, String punisher, OfflinePlayer target, String duration, @Nullable String reason) {
+    public Component formatYouGotMutedMessage(String format, String punisher, @NonNull OfflinePlayer target, String duration, @Nullable String reason) {
         Map<String, String> placeholders = Map.of(
                 "{reason}", reason != null ? reason : "No reason",
                 "{duration}", duration,
@@ -195,7 +198,7 @@ public class ChatManager {
         return mpm.parseAdmin(prepared.template(), prepared.resolver());
     }
 
-    public Component formatYouGotUnmutedMessage(String format, String pardoner, OfflinePlayer target, @Nullable String reason) {
+    public Component formatYouGotUnmutedMessage(String format, String pardoner, @NonNull OfflinePlayer target, @Nullable String reason) {
         Map<String, String> placeholders = Map.of(
                 "{reason}", reason != null ? reason : "No reason",
                 "{pardoner}", pardoner
@@ -250,7 +253,7 @@ public class ChatManager {
         return rendered;
     }
 
-    private @Nullable StructuredMessageFormat splitStructuredMessageFormat(String format) {
+    private @Nullable StructuredMessageFormat splitStructuredMessageFormat(@NonNull String format) {
         int messageIndex = format.indexOf(MESSAGE_PLACEHOLDER);
         if (messageIndex < 0) {
             return null;
@@ -278,7 +281,7 @@ public class ChatManager {
         );
     }
 
-    private Map<String, String> buildRawFormatValues(@Nullable Player player, @Nullable String channelName) {
+    private @NonNull Map<String, String> buildRawFormatValues(@Nullable Player player, @Nullable String channelName) {
         PlayerFormatValues playerValues = resolvePlayerFormatValues(player);
         Map<String, String> rawValues = new HashMap<>();
         rawValues.put("{prefix}", playerValues.prefix());
@@ -290,7 +293,7 @@ public class ChatManager {
         return rawValues;
     }
 
-    private String applyRawFormatValues(String input, @Nullable Player player, Map<String, String> rawValues) {
+    private String applyRawFormatValues(String input, @Nullable Player player, @NonNull Map<String, String> rawValues) {
         String resolved = input;
         for (Map.Entry<String, String> entry : rawValues.entrySet()) {
             resolved = resolved.replace(entry.getKey(), entry.getValue());
@@ -303,7 +306,7 @@ public class ChatManager {
         return resolved;
     }
 
-    private PlayerFormatValues resolvePlayerFormatValues(@Nullable Player player) {
+    private @NonNull PlayerFormatValues resolvePlayerFormatValues(@Nullable Player player) {
         String prefix = "";
         String suffix = "";
         String name = (player != null) ? player.getName() : "Unknown";
@@ -374,12 +377,12 @@ public class ChatManager {
         return message;
     }
 
-    private String getLuckPermsPrefix(Player player) {
+    private String getLuckPermsPrefix(@NonNull Player player) {
         User user = LuckPermsProvider.get().getUserManager().getUser(player.getUniqueId());
         return (user != null && user.getCachedData().getMetaData().getPrefix() != null) ? user.getCachedData().getMetaData().getPrefix() : "";
     }
 
-    private String getLuckPermsSuffix(Player player) {
+    private String getLuckPermsSuffix(@NonNull Player player) {
         User user = LuckPermsProvider.get().getUserManager().getUser(player.getUniqueId());
         return (user != null && user.getCachedData().getMetaData().getSuffix() != null) ? user.getCachedData().getMetaData().getSuffix() : "";
     }
@@ -459,7 +462,7 @@ public class ChatManager {
         return parsed;
     }
 
-    public boolean containsName(Player player, String text) {
+    public boolean containsName(@NonNull Player player, @NonNull String text) {
         return text.toLowerCase(Locale.ROOT).contains(player.getName().toLowerCase(Locale.ROOT));
     }
 

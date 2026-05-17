@@ -51,10 +51,12 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
     private MuteManager muteManager;
     private MessageParseManager messageParseManager;
     private ChatPipelineManager chatPipelineManager;
-    @Getter
-    private Discord discord;
     private PrefixManager prefixManager;
     private SuffixManager suffixManager;
+    private ReplyManager replyManager;
+
+    @Getter
+    private Discord discord;
 
     @Override
     public void onLoad() {
@@ -95,6 +97,7 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
         chatPipelineManager = new ChatPipelineManager();
         prefixManager = new PrefixManager(this);
         suffixManager = new SuffixManager(this);
+        replyManager = new ReplyManager();
 
         muteManager.load();
         muteManager.startMuteChecker();
@@ -236,6 +239,15 @@ public final class YoChat extends JavaPlugin implements YoChatProvider {
     @Override
     public PrefixManager getPrefixManager() {
         return prefixManager;
+    }
+
+    /**
+     * Returns the active reply manager.
+     * @return the reply manager
+     */
+    @Override
+    public ReplyManager getReplyManager() {
+        return replyManager;
     }
 
     private void debug(String message) {

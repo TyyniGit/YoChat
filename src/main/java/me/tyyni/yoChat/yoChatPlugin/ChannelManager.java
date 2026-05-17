@@ -12,6 +12,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 import java.util.*;
@@ -23,7 +24,7 @@ public class ChannelManager {
     private final FileConfiguration config;
     private final Plugin plugin;
 
-    public ChannelManager(YoChat plugin) {
+    public ChannelManager(@NonNull YoChat plugin) {
         this.plugin = plugin;
         ChatChannel channel = createChannel("global", -1, false, null);
         register(channel);
@@ -42,7 +43,7 @@ public class ChannelManager {
         }
     }
 
-    public ChatChannel getChannel(String name) {
+    public ChatChannel getChannel(@NonNull String name) {
         return channels.get(name.toLowerCase(Locale.ROOT));
     }
 
@@ -92,14 +93,14 @@ public class ChannelManager {
         }
         return new ChatChannel(channelName, radius, strictWorld, worlds);
     }
-    public void deleteChannel(String channelName) {
+    public void deleteChannel(@NonNull String channelName) {
         channels.remove(channelName.toLowerCase(Locale.ROOT));
         if (ConfigManager.getInstance() != null) {
             ConfigManager.getInstance().debug("Deleted channel %s", channelName);
         }
     }
 
-    public void renameChannel(String oldName, String newName) {
+    public void renameChannel(@NonNull String oldName, String newName) {
         ChatChannel channel = channels.remove(oldName.toLowerCase(Locale.ROOT));
         if (channel == null) {
             return;

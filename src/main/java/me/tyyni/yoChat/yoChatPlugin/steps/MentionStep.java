@@ -8,11 +8,12 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.jspecify.annotations.NonNull;
 
 public class MentionStep implements ChatPipelineStep {
 
     @Override
-    public void process(ChatContext context) {
+    public void process(@NonNull ChatContext context) {
         if (context.isCancelled()) return;
 
         Component component = context.getComponent();

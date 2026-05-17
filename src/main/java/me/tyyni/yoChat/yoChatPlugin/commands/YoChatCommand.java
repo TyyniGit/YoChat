@@ -24,6 +24,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.generator.WorldInfo;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.function.Predicate;
 import java.io.File;
@@ -1073,7 +1074,7 @@ public class YoChatCommand implements TabExecutor {
         debug("Unmute command finished for target=%s", playerName);
     }
 
-    private void handleDebug(CommandSender sender, String[] args) {
+    private void handleDebug(@NonNull CommandSender sender, String[] args) {
         if (!sender.hasPermission("yochat.commands.debug")) {
             sendNoPermissionMessage(sender);
             return;
@@ -1362,7 +1363,7 @@ public class YoChatCommand implements TabExecutor {
         return Collections.emptyList();
     }
 
-    private void sendNoPermissionMessage(CommandSender sender) {
+    private void sendNoPermissionMessage(@NonNull CommandSender sender) {
         Component msg = YoChatAPI.getPlugin().getMessageParseManager().parseAdmin(ConfigManager.getInstance().getNoPermissionMessage());
         sender.sendMessage(msg);
     }

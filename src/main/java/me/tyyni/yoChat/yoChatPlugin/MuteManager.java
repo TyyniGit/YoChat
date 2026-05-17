@@ -9,6 +9,8 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
+import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 import java.util.*;
@@ -26,7 +28,7 @@ public class MuteManager {
     private final YamlConfiguration config;
     private BukkitTask muteCheckerTask;
 
-    public MuteManager(YoChat plugin) {
+    public MuteManager(@NonNull YoChat plugin) {
         this.plugin = plugin;
         instance = this;
 
@@ -47,12 +49,12 @@ public class MuteManager {
     public static MutedPlayer getMutedPlayer(String uuid) {
        return mutedPlayers.get(uuid);
     }
-    public static void removeMutedPlayer(MutedPlayer mutedPlayer) {
+    public static void removeMutedPlayer(@NonNull MutedPlayer mutedPlayer) {
         mutedPlayers.remove(mutedPlayer.getUUID().toString());
         ConfigManager.getInstance().debug("Removed muted player %s", mutedPlayer.getUUID());
     }
 
-    public static boolean isMuted(Player player) {
+    public static boolean isMuted(@NonNull Player player) {
         return mutedPlayers.containsKey(player.getUniqueId().toString());
     }
 
@@ -60,7 +62,7 @@ public class MuteManager {
         return mutedPlayers.containsKey(uuid);
     }
 
-    public static List<String> getMutedPlayerNames() {
+    public static @NonNull @Unmodifiable List<String> getMutedPlayerNames() {
         return mutedPlayers.values().stream()
                 .map(s -> {
                     String name = Bukkit.getOfflinePlayer(s.getUUID()).getName();

@@ -16,6 +16,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -28,7 +30,7 @@ import java.util.concurrent.ExecutionException;
 public class ChatListener implements Listener {
 
     @EventHandler
-    public void onChat(AsyncChatEvent event) {
+    public void onChat(@NonNull AsyncChatEvent event) {
         Player player = event.getPlayer();
         ChatManager chatManager = YoChatAPI.getPlugin().getChatManager();
         ConfigManager config = ConfigManager.getInstance();
@@ -115,13 +117,14 @@ public class ChatListener implements Listener {
         return callSync(() -> createRenderPlan(sender, baseMessage, channel, viewers, chatManager, config));
     }
 
-    private RenderPlan createRenderPlan(
-            Player sender,
-            Component baseMessage,
-            ChatChannel channel,
-            Set<Audience> viewers,
-            ChatManager chatManager,
-            ConfigManager config
+    @Contract("_, _, _, _, _, _ -> new")
+    private @NonNull RenderPlan createRenderPlan(
+        Player sender,
+        Component baseMessage,
+        ChatChannel channel,
+        @NonNull Set<Audience> viewers,
+        ChatManager chatManager,
+        ConfigManager config
     ) {
         Map<UUID, Component> playerMessages = new HashMap<>();
         Component fallbackMessage = renderMessage(chatManager, config, channel, sender, baseMessage);
@@ -139,11 +142,11 @@ public class ChatListener implements Listener {
     }
 
     private Component renderMessage(
-            ChatManager chatManager,
-            ConfigManager config,
-            ChatChannel channel,
-            Player sender,
-            Component message
+        ChatManager chatManager,
+        @NonNull ConfigManager config,
+        ChatChannel channel,
+        Player sender,
+        Component message
     ) {
         if (config.isUseChannelSystem() && channel != null) {
             return chatManager.formatChannelMessage(channel, sender, message);

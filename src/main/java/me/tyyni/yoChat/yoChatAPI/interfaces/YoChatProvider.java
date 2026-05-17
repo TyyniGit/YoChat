@@ -62,4 +62,10 @@ public interface YoChatProvider {
      * @return the prefix manager
      */
     PrefixManager getPrefixManager();
+
+    /**
+     * Returns the reply manager implementation.
+     * @return the reply manager
+     */
+    ReplyManager getReplyManager();
 }

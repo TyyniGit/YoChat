@@ -8,16 +8,25 @@ import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.minimessage.tag.standard.StandardTags;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Handles the parsing of chat messages using MiniMessage.
+ */
 public class MessageParseManager {
-
+    /**
+     * The MiniMessage instance used for parsing.
+     */
     private MiniMessage mm;
 
+    /**
+     * Sets up the MiniMessage instance.
+     */
     public void setupMM() {
         boolean strictMode = ConfigManager.getInstance().getConfig().getBoolean("minimessage-customization.strict-mode", false);
         this.mm = MiniMessage.builder()
@@ -27,6 +36,11 @@ public class MessageParseManager {
         ConfigManager.getInstance().debug("MiniMessage configured with strictMode=%s", strictMode);
     }
 
+    /**
+     * Builds a TagResolver for the given player based on the configuration.
+     * @param player the player to build the resolver for
+     * @return a TagResolver instance
+     */
     public TagResolver getPlayerResolver(Player player) {
         TagResolver.Builder resolverBuilder = TagResolver.builder();
         ConfigurationSection section = ConfigManager.getInstance().getConfig().getConfigurationSection("minimessage-customization.allowed-tags");
@@ -53,6 +67,12 @@ public class MessageParseManager {
         return resolverBuilder.build();
     }
 
+    /**
+     * Parses a chat message for a specific player.
+     * @param player the player to parse the message for
+     * @param input the raw input string
+     * @return the parsed component or a plain text component if parsing fails
+     */
     public Component parse(Player player, String input) {
         if (input == null || input.isEmpty()) return Component.empty();
         String normalized = adoptLegacy(input);
@@ -65,6 +85,12 @@ public class MessageParseManager {
         }
     }
 
+    /**
+     * Parses a message with admin permissions.
+     * @param input the raw input string
+     * @param additionalResolvers additional resolvers to use for parsing (e.g., for placeholders)
+     * @return the parsed component or a plain text component if parsing failsolvers to use
+     */
     public Component parseAdmin(String input, TagResolver... additionalResolvers) {
         if (input == null || input.isEmpty()) return Component.empty();
 
@@ -83,7 +109,12 @@ public class MessageParseManager {
         }
     }
 
-    private String adoptLegacy(String input) {
+    /**
+     * Adopts legacy color codes from Bukkit.
+     * @param input the input string
+     * @return the string with legacy color codes replaced
+     */
+    private @NonNull String adoptLegacy(String input) {
         if (input == null) return "";
 
         String hexProcessed = input.replaceAll("&#([A-Fa-f0-9]{6})", "<#$1>");
@@ -112,6 +143,9 @@ public class MessageParseManager {
                 .replace("&r", "<reset>");
     }
 
+    /**
+     * A map of standard MiniMessage tags to their resolvers.
+     */
     private final Map<String, TagResolver> tagMap = new ConcurrentHashMap<>() {{
         put("color", StandardTags.color());
         put("decoration", StandardTags.decorations());

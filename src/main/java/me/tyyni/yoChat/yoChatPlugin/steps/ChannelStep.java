@@ -6,10 +6,11 @@ import me.tyyni.yoChat.yoChatAPI.chatPipeline.ChatPipelineStep;
 import me.tyyni.yoChat.yoChatPlugin.ConfigManager;
 import me.tyyni.yoChat.yoChatPlugin.objects.ChatChannel;
 import org.bukkit.entity.Player;
+import org.jspecify.annotations.NonNull;
 
 public class ChannelStep implements ChatPipelineStep {
     @Override
-    public void process(ChatContext context) {
+    public void process(@NonNull ChatContext context) {
         if (context.isCancelled()) return;
 
         Player player = context.getSender();

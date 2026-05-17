@@ -2,12 +2,16 @@ package me.tyyni.yoChat.yoChatPlugin.steps;
 
 import me.tyyni.yoChat.yoChatAPI.chatPipeline.ChatContext;
 import me.tyyni.yoChat.yoChatAPI.chatPipeline.ChatPipelineStep;
+import me.tyyni.yoChat.yoChatPlugin.ReplyManager;
 import net.kyori.adventure.text.Component;
+import org.jspecify.annotations.NonNull;
 
 public class FinalizeStep implements ChatPipelineStep {
 
     @Override
-    public void process(ChatContext context) {
+    public void process(@NonNull ChatContext context) {
+        ReplyManager replyManager = ReplyManager.getInstance();
+
         if(context.isCancelled()) return;
 
         if(context.getComponent() == null) {

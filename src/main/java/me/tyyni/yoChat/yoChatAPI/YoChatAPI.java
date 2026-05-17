@@ -13,7 +13,10 @@ import me.tyyni.yoChat.yoChatAPI.interfaces.YoChatProvider;
 import net.kyori.adventure.text.Component;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.*;
 
@@ -83,7 +86,7 @@ public class YoChatAPI {
      *
      * @return an immutable collection of registered channels
      */
-    public static Collection<ChatChannel> getChannels() {
+    public static @NonNull @Unmodifiable Collection<ChatChannel> getChannels() {
         checkProvider();
         return List.copyOf(provider.getChannelManager().getChannels());
     }
@@ -147,7 +150,7 @@ public class YoChatAPI {
      *
      * @param uuid the UUID of the muted player
      */
-    public static void removeMutedPlayer(UUID uuid) {
+    public static void removeMutedPlayer(@NonNull UUID uuid) {
         checkProvider();
         MutedPlayer mutedPlayer = MuteManager.getMutedPlayer(uuid.toString());
         if (mutedPlayer != null) {
@@ -171,7 +174,7 @@ public class YoChatAPI {
      * @param uuid the UUID to look up
      * @return the muted player entry, or {@code null} if the player is not muted
      */
-    public static @Nullable MutedPlayer getMutedPlayer(UUID uuid) {
+    public static @Nullable MutedPlayer getMutedPlayer(@NonNull UUID uuid) {
         checkProvider();
         return MuteManager.getMutedPlayer(uuid.toString());
     }
@@ -193,7 +196,7 @@ public class YoChatAPI {
      * @param uuid the UUID to check
      * @return {@code true} if the UUID is muted
      */
-    public static boolean isMuted(UUID uuid) {
+    public static boolean isMuted(@NonNull UUID uuid) {
         checkProvider();
         return MuteManager.isMuted(uuid.toString());
     }
@@ -203,7 +206,8 @@ public class YoChatAPI {
      *
      * @return a collection containing all muted players
      */
-    public static Collection<MutedPlayer> getMutedPlayers() {
+    @Contract(" -> new")
+    public static @NonNull Collection<MutedPlayer> getMutedPlayers() {
         checkProvider();
         return new ArrayList<>(MuteManager.getMutedPlayers().values());
     }
@@ -213,7 +217,7 @@ public class YoChatAPI {
      *
      * @return a list of muted player names
      */
-    public static List<String> getMutedPlayerNames() {
+    public static @NonNull @Unmodifiable List<String> getMutedPlayerNames() {
         checkProvider();
         return MuteManager.getMutedPlayerNames();
     }
@@ -305,7 +309,7 @@ public class YoChatAPI {
      *
      * @return a snapshot containing every registered pipeline step
      */
-    public static Collection<ChatPipelineManager.RegisteredPipelineStep> getAllRegisteredPipelineSteps() {
+    public static @NonNull @Unmodifiable Collection<ChatPipelineManager.RegisteredPipelineStep> getAllRegisteredPipelineSteps() {
         checkProvider();
         return provider.getChatPipelineManager().getRegisteredSteps().values().stream().flatMap(Collection::stream).toList();
     }

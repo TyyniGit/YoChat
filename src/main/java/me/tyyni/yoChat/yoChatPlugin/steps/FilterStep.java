@@ -8,13 +8,14 @@ import me.tyyni.yoChat.yoChatPlugin.ConfigManager;
 import net.kyori.adventure.text.Component;
 import org.apache.commons.lang3.StringUtils;
 import org.bukkit.entity.Player;
+import org.jspecify.annotations.NonNull;
 
 import java.util.regex.Matcher;
 
 public class FilterStep implements ChatPipelineStep {
 
     @Override
-    public void process(ChatContext context) {
+    public void process(@NonNull ChatContext context) {
         if (context.isCancelled()) return;
 
         ChatManager chatManager = YoChatAPI.getPlugin().getChatManager();
@@ -35,7 +36,7 @@ public class FilterStep implements ChatPipelineStep {
         }
     }
 
-    private String containsBlacklistedWords(String message) {
+    private String containsBlacklistedWords(@NonNull String message) {
         ChatManager chatManager = YoChatAPI.getPlugin().getChatManager();
 
         Matcher matcher = chatManager.getBlockedPattern().matcher(message.toLowerCase());

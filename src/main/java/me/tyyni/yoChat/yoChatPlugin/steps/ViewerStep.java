@@ -6,6 +6,7 @@ import me.tyyni.yoChat.yoChatPlugin.ConfigManager;
 import me.tyyni.yoChat.yoChatPlugin.objects.ChatChannel;
 import net.kyori.adventure.audience.Audience;
 import org.bukkit.entity.Player;
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -13,7 +14,7 @@ import java.util.Set;
 public class ViewerStep implements ChatPipelineStep {
 
     @Override
-    public void process(ChatContext context) {
+    public void process(@NonNull ChatContext context) {
         if (context.isCancelled()) return;
 
         ChatChannel channel = context.getChannel();

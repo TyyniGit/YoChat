@@ -5,14 +5,7 @@ import me.tyyni.yoChat.yoChatAPI.chatPipeline.ChatContext;
 import me.tyyni.yoChat.yoChatAPI.chatPipeline.ChatPipelineStep;
 import me.tyyni.yoChat.yoChatAPI.chatPipeline.Stage;
 import me.tyyni.yoChat.yoChatAPI.YoChatAPI;
-import me.tyyni.yoChat.yoChatPlugin.steps.ChannelStep;
-import me.tyyni.yoChat.yoChatPlugin.steps.FilterStep;
-import me.tyyni.yoChat.yoChatPlugin.steps.FinalizeStep;
-import me.tyyni.yoChat.yoChatPlugin.steps.FormatStep;
-import me.tyyni.yoChat.yoChatPlugin.steps.MentionStep;
-import me.tyyni.yoChat.yoChatPlugin.steps.MuteStep;
-import me.tyyni.yoChat.yoChatPlugin.steps.PlaceholderStep;
-import me.tyyni.yoChat.yoChatPlugin.steps.ViewerStep;
+import me.tyyni.yoChat.yoChatPlugin.steps.*;
 import org.bukkit.Bukkit;
 import org.jspecify.annotations.NonNull;
 
@@ -197,7 +190,7 @@ public class ChatPipelineManager {
         }
     }
 
-    private void executeStep(RegisteredPipelineStep registeredStep, ChatContext context) {
+    private void executeStep(@NonNull RegisteredPipelineStep registeredStep, ChatContext context) {
         if (registeredStep.asyncSafe() || Bukkit.isPrimaryThread()) {
             registeredStep.step().process(context);
             return;
@@ -241,6 +234,8 @@ public class ChatPipelineManager {
         registerStep(Stage.VIEWERS, new ViewerStep(), 0);
         registerStep(Stage.FORMAT, new FormatStep(), 0);
         registerStep(Stage.POST, new FinalizeStep(), 0);
+        registerStep(Stage.POST, new ReplyStep(), 50);
+        registerStep(Stage.POST, new ReplyMarkerStep(), 75);
         registerStep(Stage.POST, new MentionStep(), 100);
     }
 

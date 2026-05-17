@@ -11,6 +11,7 @@ import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 import java.util.*;
@@ -108,7 +109,20 @@ public class ConfigManager {
     @Getter
     private List<String> priorityOrder;
 
-    public ConfigManager(YoChat plugin) {
+    @Getter
+    private boolean useReplying;
+    @Getter
+    private String replyIcon;
+    @Getter
+    private int maxReplyLength;
+    @Getter
+    private String replyButtonIcon;
+    @Getter
+    private boolean publicReplies;
+    @Getter
+    private String replyHoverText;
+
+    public ConfigManager(@NonNull YoChat plugin) {
         this.plugin = plugin;
         instance = this;
 
@@ -210,6 +224,13 @@ public class ConfigManager {
                 }
             }
         }
+
+        publicReplies = config.getBoolean("replying.public-replies", true);
+        useReplying = config.getBoolean("replying.enabled", true);
+        replyButtonIcon = config.getString("replying.reply-button-icon", "⮢");
+        replyIcon = config.getString("replying.reply-icon", "⮡");
+        maxReplyLength = config.getInt("replying.max-reply-length", 20);
+        replyHoverText = config.getString("replying.reply-hover-text", "<yellow>Click to reply to {player}</yellow>");
 
         if (defaultChannel == null) {
             plugin.getLogger().warning("Default channel not found! Using global.");

@@ -16,11 +16,13 @@ C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\Co
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\listeners\ChatListener.java
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\listeners\PlayerJoinListener.java
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\listeners\PlayerQuitListener.java
+C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\listeners\ReplyCommandListener.java
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\MessageParseManager.java
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\MuteManager.java
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\objects\ChatChannel.java
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\objects\MutedPlayer.java
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\PrefixManager.java
+C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\ReplyManager.java
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\steps\ChannelStep.java
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\steps\FilterStep.java
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\steps\FinalizeStep.java
@@ -28,6 +30,8 @@ C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\st
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\steps\MentionStep.java
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\steps\MuteStep.java
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\steps\PlaceholderStep.java
+C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\steps\ReplyMarkerStep.java
+C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\steps\ReplyStep.java
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\steps\ViewerStep.java
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\SuffixManager.java
 C:\Users\Eemil\IdeaProjects\YoChat\src\main\java\me\tyyni\yoChat\yoChatPlugin\webhook\Discord.java
