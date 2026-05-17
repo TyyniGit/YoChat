@@ -10,7 +10,7 @@ general:
   # The prefix that will be displayed before chat messages from this plugin. You can use color codes and formatting here.
   # Preferred to use the default prefix for better aesthetics, but you can customize it as needed.
   # (Default: <b><gradient:#9863E7:#9863E7>YoChat</gradient></b> )
-  chat-prefix: "<b><gradient:#9863E7:#9863E7>YoChat »</gradient></b> "
+  chat-prefix: "<b><#9863E7>YoChat »</b> "
 
   # Debug mode for logging additional information to the console
   debug: false
