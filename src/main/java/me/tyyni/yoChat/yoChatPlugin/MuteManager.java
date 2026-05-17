@@ -39,17 +39,17 @@ public class MuteManager {
     }
 
     public static void addMutedPlayer(MutedPlayer mutedPlayer) {
-        mutedPlayers.put(mutedPlayer.getUuid().toString(), mutedPlayer);
+        mutedPlayers.put(mutedPlayer.getUUID().toString(), mutedPlayer);
         ConfigManager.getInstance().debug("Added muted player %s duration=%d reason=%s",
-                mutedPlayer.getUuid(), mutedPlayer.getDuration(), mutedPlayer.getReason());
+                mutedPlayer.getUUID(), mutedPlayer.getDuration(), mutedPlayer.getReason());
     }
 
     public static MutedPlayer getMutedPlayer(String uuid) {
        return mutedPlayers.get(uuid);
     }
     public static void removeMutedPlayer(MutedPlayer mutedPlayer) {
-        mutedPlayers.remove(mutedPlayer.getUuid().toString());
-        ConfigManager.getInstance().debug("Removed muted player %s", mutedPlayer.getUuid());
+        mutedPlayers.remove(mutedPlayer.getUUID().toString());
+        ConfigManager.getInstance().debug("Removed muted player %s", mutedPlayer.getUUID());
     }
 
     public static boolean isMuted(Player player) {
@@ -63,8 +63,8 @@ public class MuteManager {
     public static List<String> getMutedPlayerNames() {
         return mutedPlayers.values().stream()
                 .map(s -> {
-                    String name = Bukkit.getOfflinePlayer(s.getUuid()).getName();
-                    return name != null ? name : s.getUuid().toString();
+                    String name = Bukkit.getOfflinePlayer(s.getUUID()).getName();
+                    return name != null ? name : s.getUUID().toString();
                 })
                 .toList();
     }
@@ -121,12 +121,12 @@ public class MuteManager {
         for (MutedPlayer mp : mutedPlayers.values()) {
             if (mp.hasExpired()) {
                 removeMutedPlayer(mp);
-                ConfigManager.getInstance().debug("Mute expired for %s", mp.getUuid());
+                ConfigManager.getInstance().debug("Mute expired for %s", mp.getUUID());
 
                 if (ConfigManager.getInstance().isUseTimeEndedMessage()) {
                     Bukkit.getScheduler().runTask(plugin, () -> {
 
-                        Player onlinePlayer = Bukkit.getPlayer(mp.getUuid());
+                        Player onlinePlayer = Bukkit.getPlayer(mp.getUUID());
                         if (onlinePlayer != null) {
                             onlinePlayer.sendMessage(YoChatAPI.getPlugin().getChatManager().formatTimeEndedMessage(ConfigManager.getInstance().getTimeEndedMessage(), onlinePlayer));
                         }

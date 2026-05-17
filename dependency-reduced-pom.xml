@@ -4,7 +4,7 @@
   <groupId>me.tyyni</groupId>
   <artifactId>YoChat</artifactId>
   <name>YoChat</name>
-  <version>1.2.1</version>
+  <version>1.2.2</version>
   <build>
     <defaultGoal>clean package</defaultGoal>
     <resources>
@@ -16,7 +16,7 @@
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.13.0</version>
+        <version>3.14.1</version>
         <configuration>
           <release>${java.version}</release>
           <annotationProcessorPaths>
@@ -30,12 +30,24 @@
       </plugin>
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>3.5.3</version>
+        <version>3.6.1</version>
         <executions>
           <execution>
             <phase>package</phase>
             <goals>
               <goal>shade</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.6.3</version>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
             </goals>
           </execution>
         </executions>
@@ -78,7 +90,7 @@
     <dependency>
       <groupId>org.jetbrains</groupId>
       <artifactId>annotations</artifactId>
-      <version>24.0.1</version>
+      <version>26.1.0</version>
       <scope>provided</scope>
     </dependency>
     <dependency>

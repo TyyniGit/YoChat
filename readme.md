@@ -68,7 +68,7 @@ JitPack dependency:
 <dependency>
     <groupId>me.tyyni</groupId>
     <artifactId>YoChat</artifactId>
-    <version>1.2.1</version>
+    <version>1.2.2</version>
     <scope>provided</scope>
 </dependency>
 ```
